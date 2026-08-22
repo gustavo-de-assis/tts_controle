@@ -1,19 +1,19 @@
 import React from "react";
 import { Search, Bell } from "lucide-react";
 import { KpiCard } from "./components/kpi-card";
-import { SkuTable, SkuTableRow } from "./components/sku-table";
-import { StatusEstoque } from "../src/domain/stock";
+import { SkuTable } from "./components/sku-table";
+import { getSkus, getDashboardKpis } from "../src/actions/dashboard";
+import { getSkus as fetchSkus } from "../src/actions/stock";
 
-// Mock data
-const mockSkus: SkuTableRow[] = [
-  { id: "1", sku: "VES-FLO-P", productName: "Vestido Floral Verão", color: "Azul", size: "P", currentStock: 12, minimumStock: 3, status: StatusEstoque.NORMAL },
-  { id: "2", sku: "VES-FLO-M", productName: "Vestido Floral Verão", color: "Azul", size: "M", currentStock: 2, minimumStock: 3, status: StatusEstoque.ESTOQUE_CRITICO },
-  { id: "3", sku: "CAM-BAS-BR-G", productName: "Camiseta Básica", color: "Branco", size: "G", currentStock: 45, minimumStock: 10, status: StatusEstoque.NORMAL },
-  { id: "4", sku: "CAL-JEA-AZ-38", productName: "Calça Jeans Skinny", color: "Azul Escuro", size: "38", currentStock: 0, minimumStock: 5, status: StatusEstoque.ESTOQUE_CRITICO },
-  { id: "5", sku: "JAQ-COU-PR-M", productName: "Jaqueta Couro Sintético", color: "Preto", size: "M", currentStock: 8, minimumStock: 2, status: StatusEstoque.NORMAL },
-];
+export default async function Home() {
+  const skus = await fetchSkus();
+  const kpis = await getDashboardKpis();
 
-export default function Home() {
+  // Função utilitária para formatar valores em R$
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
+
   return (
     <>
       {/* Header Superior */}
@@ -64,26 +64,24 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <KpiCard 
               title="Faturamento Mensal" 
-              value="R$ 42.500" 
+              value={formatCurrency(kpis.monthlyRevenue)} 
               trend="up" 
-              trendValue="12.5%" 
+              trendValue="0%" 
             />
             <KpiCard 
               title="Margem Média" 
-              value="62.4%" 
-              trend="up" 
-              trendValue="2.1%" 
+              value={`${kpis.averageMargin.toFixed(1)}%`} 
+              trend="neutral" 
             />
             <KpiCard 
               title="Total em Estoque" 
-              value="1.248" 
+              value={kpis.totalStock.toString()} 
               trend="neutral" 
             />
             <KpiCard 
               title="Alertas de Reposição" 
-              value="14" 
-              trend="down" 
-              trendValue="-3" 
+              value={kpis.alertsCount.toString()} 
+              trend={kpis.alertsCount > 0 ? "down" : "up"} 
             />
           </div>
 
@@ -92,7 +90,7 @@ export default function Home() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-foreground">Status de Estoque por SKU</h2>
             </div>
-            <SkuTable data={mockSkus} />
+            <SkuTable data={skus} />
           </div>
           
         </div>
@@ -100,3 +98,4 @@ export default function Home() {
     </>
   );
 }
+
