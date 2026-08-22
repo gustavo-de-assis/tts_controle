@@ -1,10 +1,13 @@
 // Prisma Schema — StockApp Fashion
-// Stack: Next.js 16 + PostgreSQL (Supabase)
+// Stack: Next.js 16 + SQLite (Local Dev)
 // Entidades mapeadas conforme Regras de Negócio (RN-001 a RN-006)
-// NOTA: No Prisma 7, a URL de conexão é configurada em prisma.config.ts, não aqui.
 
 generator client {
   provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
 }
 
 // ---------------------------------------------------------------------------
@@ -32,8 +35,8 @@ model Product {
   id            String    @id @default(uuid())
   name          String
   imageUrl      String?   @map("image_url")
-  baseCostPrice Decimal   @map("base_cost_price") @db.Decimal(10, 2)
-  baseSalePrice Decimal   @map("base_sale_price") @db.Decimal(10, 2)
+  baseCostPrice Float     @map("base_cost_price")
+  baseSalePrice Float     @map("base_sale_price")
   active        Boolean   @default(true)
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
@@ -59,7 +62,7 @@ model Sku {
   currentStock   Int       @default(0) @map("current_stock")
   minimumStock   Int       @default(0) @map("minimum_stock")
   // Override de preço no nível do SKU (RN-004)
-  salePriceOverride Decimal? @map("sale_price_override") @db.Decimal(10, 2)
+  salePriceOverride Float? @map("sale_price_override")
   active         Boolean   @default(true)
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
@@ -78,18 +81,11 @@ model Sku {
 // Nunca deletar; correções via AJUSTE_PERDA ou DEVOLUCAO.
 // ---------------------------------------------------------------------------
 
-enum MovementType {
-  ENTRADA
-  SAIDA_VENDA
-  AJUSTE_PERDA
-  DEVOLUCAO
-}
-
 model StockMovement {
   id          String       @id @default(uuid())
-  type        MovementType
+  type        String       // ENTRADA, SAIDA_VENDA, AJUSTE_PERDA, DEVOLUCAO
   quantity    Int
-  unitValue   Decimal      @map("unit_value") @db.Decimal(10, 2)
+  unitValue   Float        @map("unit_value")
   observation String?
   createdAt   DateTime     @default(now()) @map("created_at")
 
@@ -107,24 +103,12 @@ model StockMovement {
 // Venda — Pedido / Registro de transação (RN-006)
 // ---------------------------------------------------------------------------
 
-enum PaymentMethod {
-  PIX
-  CARTAO_CREDITO
-  CARTAO_DEBITO
-  DINHEIRO
-}
-
-enum SaleStatus {
-  CONCLUIDA
-  CANCELADA
-}
-
 model Sale {
   id            String        @id @default(uuid())
-  totalAmount   Decimal       @map("total_amount") @db.Decimal(10, 2)
-  discount      Decimal       @default(0) @db.Decimal(10, 2)
-  paymentMethod PaymentMethod @map("payment_method")
-  status        SaleStatus    @default(CONCLUIDA)
+  totalAmount   Float         @map("total_amount")
+  discount      Float         @default(0)
+  paymentMethod String        @map("payment_method") // PIX, CARTAO_CREDITO, CARTAO_DEBITO, DINHEIRO
+  status        String        @default("CONCLUIDA")  // CONCLUIDA, CANCELADA
   createdAt     DateTime      @default(now()) @map("created_at")
 
   items         SaleItem[]
@@ -140,7 +124,7 @@ model Sale {
 model SaleItem {
   id          String  @id @default(uuid())
   quantity    Int
-  unitValue   Decimal @map("unit_value") @db.Decimal(10, 2)
+  unitValue   Float   @map("unit_value")
 
   saleId      String  @map("sale_id")
   sale        Sale    @relation(fields: [saleId], references: [id])
