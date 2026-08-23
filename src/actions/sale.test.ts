@@ -7,16 +7,19 @@ const mockSaleCreate = vi.hoisted(() => vi.fn())
 const mockSaleItemCreate = vi.hoisted(() => vi.fn())
 const mockStockMovementCreate = vi.hoisted(() => vi.fn())
 const mockSkuUpdate = vi.hoisted(() => vi.fn())
+const mockCustomerFindUnique = vi.hoisted(() => vi.fn())
+const mockCustomerCreate = vi.hoisted(() => vi.fn())
+const mockValidarVenda = vi.hoisted(() => vi.fn())
 const mockTransaction = vi.hoisted(() => vi.fn())
 
 vi.mock('../lib/prisma', () => ({
   prisma: {
     $transaction: mockTransaction,
-    sku: { findMany: mockSkuFindMany },
+    sku: { findMany: mockSkuFindMany, update: mockSkuUpdate },
     sale: { create: mockSaleCreate },
     saleItem: { create: mockSaleItemCreate },
     stockMovement: { create: mockStockMovementCreate },
-    sku: { update: mockSkuUpdate },
+    customer: { findUnique: mockCustomerFindUnique, create: mockCustomerCreate },
   },
 }))
 
@@ -26,9 +29,10 @@ vi.mock('next/cache', () => ({
 
 vi.mock('../domain/sale', () => ({
   processarVenda: vi.fn(),
+  validarVenda: mockValidarVenda,
 }))
 
-import { processarVenda } from '../domain/sale'
+import { processarVenda, type TipoMovimentacao } from '../domain/sale'
 
 describe('registerSale', () => {
   const mockDbSkus = [
@@ -42,7 +46,7 @@ describe('registerSale', () => {
       salePriceOverride: null,
       product: {
         id: 'prod-1',
-        baseSalePrice: 50,
+        baseSalePrice: 5000,
       },
     },
     {
@@ -52,18 +56,18 @@ describe('registerSale', () => {
       currentStock: 5,
       minimumStock: 1,
       active: true,
-      salePriceOverride: 60,
+      salePriceOverride: 6000,
       product: {
         id: 'prod-1',
-        baseSalePrice: 50,
+        baseSalePrice: 5000,
       },
     },
   ]
 
   const mockResultadoVenda = {
     movimentacoes: [
-      { skuId: 'sku-1', tipo: 'SAIDA_VENDA', quantidade: 2, valorUnitario: 50 },
-      { skuId: 'sku-2', tipo: 'SAIDA_VENDA', quantidade: 1, valorUnitario: 60 },
+      { skuId: 'sku-1', tipo: 'SAIDA_VENDA' as TipoMovimentacao, quantidade: 2, valorUnitario: 50, dataHora: '2026-08-23T00:00:00.000Z' },
+      { skuId: 'sku-2', tipo: 'SAIDA_VENDA' as TipoMovimentacao, quantidade: 1, valorUnitario: 60, dataHora: '2026-08-23T00:00:00.000Z' },
     ],
     skusAtualizados: [
       { id: 'sku-1', estoqueAtual: 8 },
@@ -81,16 +85,24 @@ describe('registerSale', () => {
         sale: { create: mockSaleCreate },
         saleItem: { create: mockSaleItemCreate },
         stockMovement: { create: mockStockMovementCreate },
+        customer: { findUnique: mockCustomerFindUnique, create: mockCustomerCreate },
       })
     })
 
     mockSkuFindMany.mockResolvedValue(mockDbSkus)
+    mockValidarVenda.mockImplementation((venda) => {
+      if (venda.status === 'PENDENTE' && !venda.customerId) {
+        throw new Error('Vendas pendentes exigem um cliente identificado.')
+      }
+    })
     mockSaleCreate.mockResolvedValue({ id: 'sale-1', totalAmount: 150, discount: 10 })
     mockSaleItemCreate.mockResolvedValue({ id: 'si-1' })
     mockStockMovementCreate.mockResolvedValue({ id: 'mov-1' })
+    mockCustomerFindUnique.mockResolvedValue({ id: 'customer-1', name: 'Maria' })
+    mockCustomerCreate.mockResolvedValue({ id: 'customer-1', name: 'Maria' })
     mockSkuUpdate.mockResolvedValue({ id: 'sku-1' })
 
-    vi.mocked(processarVenda).mockReturnValue(mockResultadoVenda)
+    vi.mocked(processarVenda).mockReturnValue(mockResultadoVenda as never)
   })
 
   it('deve registrar uma venda e atualizar estoques', async () => {
@@ -122,8 +134,8 @@ describe('registerSale', () => {
     expect(mockSaleCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          totalAmount: 150, // 160 - 10
-          discount: 10,
+          totalAmount: 15000, // 160 - 10 em centavos
+          discount: 1000,
           paymentMethod: 'PIX',
           status: 'CONCLUIDA',
         }),
@@ -161,6 +173,39 @@ describe('registerSale', () => {
         ],
       })
     ).rejects.toThrow('Um ou mais SKUs não foram encontrados no banco de dados.')
+  })
+
+  it('deve registrar venda pendente com cliente e vencimento', async () => {
+    mockSkuFindMany.mockResolvedValue([mockDbSkus[0]])
+
+    await registerSale({
+      paymentMethod: 'FIADO',
+      discount: 0,
+      status: 'PENDENTE',
+      customerName: 'Maria',
+      dueDate: '2026-09-01',
+      items: [{ skuId: 'sku-1', quantity: 1 }],
+    })
+
+    expect(mockCustomerCreate).toHaveBeenCalledWith({ data: { name: 'Maria' } })
+    expect(mockSaleCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'PENDENTE',
+          customerId: 'customer-1',
+          dueDate: new Date('2026-09-01'),
+        }),
+      })
+    )
+  })
+
+  it('deve rejeitar venda pendente sem cliente', async () => {
+    await expect(registerSale({
+      paymentMethod: 'FIADO',
+      discount: 0,
+      status: 'PENDENTE',
+      items: [{ skuId: 'sku-1', quantity: 1 }],
+    })).rejects.toThrow('Vendas pendentes exigem um cliente identificado.')
   })
 
   it('deve rejeitar venda com estoque insuficiente (domínio)', async () => {

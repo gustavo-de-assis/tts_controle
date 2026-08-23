@@ -11,7 +11,14 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { processarVenda, TipoMovimentacao, type ItemVenda, type ResultadoVenda } from './sale'
+import {
+  processarVenda,
+  TipoMovimentacao,
+  validarVenda,
+  type ItemVenda,
+  type ResultadoVenda,
+  type StatusVenda,
+} from './sale'
 import type { Sku } from './product'
 
 // ---------------------------------------------------------------------------
@@ -97,6 +104,27 @@ describe('RN-006: processarVenda — baixa automática de estoque', () => {
     expect(resultado.movimentacoes).toHaveLength(1)
     expect(resultado.skusAtualizados[0].estoqueAtual).toBe(0)
     expect(resultado.valorTotal).toBe(500)
+  })
+})
+
+describe('Status da venda e comprador', () => {
+  it('deve aceitar venda concluída sem comprador', () => {
+    expect(() => validarVenda({ status: 'CONCLUIDA' })).not.toThrow()
+  })
+
+  it('deve exigir comprador identificado para venda pendente', () => {
+    expect(() => validarVenda({ status: 'PENDENTE' })).toThrow(
+      'Vendas pendentes exigem um cliente identificado.'
+    )
+  })
+
+  it('deve aceitar venda pendente com comprador', () => {
+    const venda: { status: StatusVenda; customerId: string } = {
+      status: 'PENDENTE',
+      customerId: 'customer-001',
+    }
+
+    expect(() => validarVenda(venda)).not.toThrow()
   })
 })
 
