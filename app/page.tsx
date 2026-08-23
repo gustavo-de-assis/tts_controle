@@ -2,12 +2,19 @@ import React from "react";
 import { Search, Bell } from "lucide-react";
 import { KpiCard } from "./components/kpi-card";
 import { SkuTable } from "./components/sku-table";
-import { getSkus, getDashboardKpis } from "../src/actions/dashboard";
+import { DashboardActions } from "./components/dashboard-actions";
+import { getDashboardKpis } from "../src/actions/dashboard";
 import { getSkus as fetchSkus } from "../src/actions/stock";
+import { prisma } from "../src/lib/prisma";
 
 export default async function Home() {
   const skus = await fetchSkus();
   const kpis = await getDashboardKpis();
+  
+  // Buscar categorias para o modal de produto
+  const categories = await prisma.category.findMany({
+    select: { id: true, name: true }
+  });
 
   // Função utilitária para formatar valores em R$
   const formatCurrency = (value: number) => {
@@ -55,9 +62,14 @@ export default async function Home() {
       <main className="flex-1 p-8 overflow-y-auto bg-background">
         <div className="max-w-7xl mx-auto space-y-8">
           
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Dashboard Overview</h1>
-            <p className="text-muted-foreground mt-1 text-sm">Resumo do desempenho e alertas do seu estoque hoje.</p>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">Dashboard Overview</h1>
+              <p className="text-muted-foreground mt-1 text-sm">Resumo do desempenho e alertas do seu estoque hoje.</p>
+            </div>
+            
+            {/* Componente Client-Side para controlar os Modais */}
+            <DashboardActions categories={categories} skus={skus} />
           </div>
 
           {/* KPI Cards */}
