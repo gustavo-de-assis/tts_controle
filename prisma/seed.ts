@@ -1,4 +1,5 @@
 import { prisma } from '../src/lib/prisma'
+import { toCents } from '../src/domain/money'
 
 async function main() {
   console.log('Iniciando o seed do banco de dados...')
@@ -39,8 +40,8 @@ async function main() {
   const prodVestidoFloral = await prisma.product.create({
     data: {
       name: 'Vestido Floral Verão',
-      baseCostPrice: 45.0,
-      baseSalePrice: 120.0,
+      baseCostPrice: toCents(45.0),
+      baseSalePrice: toCents(120.0),
       categoryId: catVestidos.id,
     },
   })
@@ -48,8 +49,8 @@ async function main() {
   const prodCamisetaBasica = await prisma.product.create({
     data: {
       name: 'Camiseta Básica Algodão',
-      baseCostPrice: 15.0,
-      baseSalePrice: 49.9,
+      baseCostPrice: toCents(15.0),
+      baseSalePrice: toCents(49.9),
       categoryId: catCamisetas.id,
     },
   })
@@ -57,8 +58,8 @@ async function main() {
   const prodCalcaJeans = await prisma.product.create({
     data: {
       name: 'Calça Jeans Skinny',
-      baseCostPrice: 60.0,
-      baseSalePrice: 159.9,
+      baseCostPrice: toCents(60.0),
+      baseSalePrice: toCents(159.9),
       categoryId: catCalcas.id,
     },
   })

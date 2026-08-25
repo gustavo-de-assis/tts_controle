@@ -2,11 +2,17 @@
 
 import { prisma } from "../lib/prisma";
 import { processarVenda } from "../domain/sale";
+import { validarVenda, type StatusVenda } from "../domain/sale";
+import { fromCents, toCents } from "../domain/money";
 import { revalidatePath } from "next/cache";
 
 export interface RegisterSaleInput {
   paymentMethod: string; // PIX, CARTAO_CREDITO, etc.
   discount: number;
+  status?: StatusVenda;
+  customerId?: string;
+  customerName?: string;
+  dueDate?: string;
   items: Array<{
     skuId: string;
     quantity: number;
@@ -18,8 +24,24 @@ export async function registerSale(data: RegisterSaleInput) {
     throw new Error("A venda precisa ter ao menos um item.");
   }
 
+  const status = data.status ?? "CONCLUIDA";
+  const customerId = data.customerId ?? (data.customerName?.trim() ? "new-customer" : undefined);
+  validarVenda({ status, customerId });
+
   // Executa toda a lógica em uma transação para garantir integridade (RN-006)
   const saleId = await prisma.$transaction(async (tx) => {
+    let persistedCustomerId = data.customerId;
+
+    if (data.customerId) {
+      const customer = await tx.customer.findUnique({ where: { id: data.customerId } });
+      if (!customer) {
+        throw new Error("Cliente não encontrado.");
+      }
+    } else if (data.customerName?.trim()) {
+      const customer = await tx.customer.create({ data: { name: data.customerName.trim() } });
+      persistedCustomerId = customer.id;
+    }
+
     // 1. Busca os SKUs no banco de dados para injetar no domínio
     const skuIds = data.items.map(item => item.skuId);
     const dbSkus = await tx.sku.findMany({
@@ -35,7 +57,7 @@ export async function registerSale(data: RegisterSaleInput) {
     const itensVenda = data.items.map(item => {
       const dbSku = dbSkus.find(s => s.id === item.skuId)!;
       // Preço de venda: usa o override do SKU se existir, senão usa o preço base do Produto Pai
-      const salePrice = dbSku.salePriceOverride ?? dbSku.product.baseSalePrice;
+      const salePrice = fromCents(dbSku.salePriceOverride ?? dbSku.product.baseSalePrice);
 
       return {
         sku: {
@@ -58,10 +80,12 @@ export async function registerSale(data: RegisterSaleInput) {
     // 4. Se passou pela validação de domínio, aplicamos o resultado no banco
     const sale = await tx.sale.create({
       data: {
-        totalAmount: resultado.valorTotal - data.discount,
-        discount: data.discount,
+        totalAmount: toCents(resultado.valorTotal - data.discount),
+        discount: toCents(data.discount),
         paymentMethod: data.paymentMethod,
-        status: "CONCLUIDA",
+        status,
+        customerId: persistedCustomerId,
+        dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
       }
     });
 
@@ -72,7 +96,7 @@ export async function registerSale(data: RegisterSaleInput) {
           saleId: sale.id,
           skuId: mov.skuId,
           quantity: mov.quantidade,
-          unitValue: mov.valorUnitario,
+          unitValue: toCents(mov.valorUnitario),
         }
       });
 
@@ -82,7 +106,7 @@ export async function registerSale(data: RegisterSaleInput) {
           skuId: mov.skuId,
           type: mov.tipo,
           quantity: mov.quantidade,
-          unitValue: mov.valorUnitario,
+          unitValue: toCents(mov.valorUnitario),
           saleId: sale.id,
           observation: "Baixa Automática por Venda",
         }

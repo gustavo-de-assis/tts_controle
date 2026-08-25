@@ -26,6 +26,24 @@ export enum TipoMovimentacao {
   DEVOLUCAO = 'DEVOLUCAO',
 }
 
+/** Status de pagamento suportados no registro de vendas. */
+export type StatusVenda = 'CONCLUIDA' | 'PENDENTE'
+
+export interface DadosVenda {
+  status: StatusVenda
+  customerId?: string
+}
+
+export function validarVenda(venda: DadosVenda): void {
+  if (venda.status !== 'CONCLUIDA' && venda.status !== 'PENDENTE') {
+    throw new Error('Status de venda inválido.')
+  }
+
+  if (venda.status === 'PENDENTE' && !venda.customerId) {
+    throw new Error('Vendas pendentes exigem um cliente identificado.')
+  }
+}
+
 /**
  * Registro auditável de uma movimentação de estoque.
  * Objetos deste tipo são **congelados** ao ser criados (RN-005).

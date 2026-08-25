@@ -1,22 +1,30 @@
 "use client";
 
 import React, { useState } from "react";
-import { Search, Filter, ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { Search, Filter, ArrowUpDown, PackagePlus, Pencil } from "lucide-react";
 import { StatusEstoque } from "../../src/domain/stock";
+import { StockEntryModal } from "./stock-entry-modal";
+import { ProductEditModal } from "./product-edit-modal";
 
 export interface SkuTableRow {
   id: string;
+  productId?: string;
   sku: string;
   productName: string;
+  baseCostPrice?: number;
+  baseSalePrice?: number;
   color: string;
   size: string;
   currentStock: number;
   minimumStock: number;
+  salePrice?: number;
   status: StatusEstoque;
 }
 
 export function SkuTable({ data }: { data: SkuTableRow[] }) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [entrySku, setEntrySku] = useState<SkuTableRow | null>(null);
+  const [editSku, setEditSku] = useState<SkuTableRow | null>(null);
 
   const filteredData = data.filter(
     (item) =>
@@ -95,17 +103,22 @@ export function SkuTable({ data }: { data: SkuTableRow[] }) {
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-muted transition-colors">
-                      <MoreHorizontal className="h-4 w-4" />
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-1">
+                    <button type="button" onClick={() => setEntrySku(row)} title="Dar entrada" aria-label={`Dar entrada em ${row.sku}`} className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary">
+                      <PackagePlus className="h-4 w-4" />
                     </button>
+                    <button type="button" onClick={() => setEditSku(row)} title="Editar produto" aria-label={`Editar produto ${row.productName}`} className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    </div>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
                 <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
-                  Nenhum SKU encontrado para a busca "{searchTerm}".
+                  Nenhum SKU encontrado para a busca &quot;{searchTerm}&quot;.
                 </td>
               </tr>
             )}
@@ -121,6 +134,9 @@ export function SkuTable({ data }: { data: SkuTableRow[] }) {
           <button className="px-3 py-1 border border-border rounded hover:bg-muted">Próximo</button>
         </div>
       </div>
+
+      <StockEntryModal isOpen={entrySku !== null} sku={entrySku} onClose={() => setEntrySku(null)} />
+      <ProductEditModal key={editSku?.id ?? "none"} isOpen={editSku !== null} sku={editSku} onClose={() => setEditSku(null)} />
     </div>
   );
 }

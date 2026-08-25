@@ -1,5 +1,5 @@
 // Prisma Schema — StockApp Fashion
-// Stack: Next.js 16 + SQLite (Local Dev)
+// Stack: Next.js 16 + PostgreSQL (Supabase)
 // Entidades mapeadas conforme Regras de Negócio (RN-001 a RN-006)
 
 generator client {
@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 // ---------------------------------------------------------------------------
@@ -35,8 +35,8 @@ model Product {
   id            String    @id @default(uuid())
   name          String
   imageUrl      String?   @map("image_url")
-  baseCostPrice Float     @map("base_cost_price")
-  baseSalePrice Float     @map("base_sale_price")
+  baseCostPrice Int       @map("base_cost_price") // centavos
+  baseSalePrice Int       @map("base_sale_price") // centavos
   active        Boolean   @default(true)
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
@@ -62,7 +62,7 @@ model Sku {
   currentStock   Int       @default(0) @map("current_stock")
   minimumStock   Int       @default(0) @map("minimum_stock")
   // Override de preço no nível do SKU (RN-004)
-  salePriceOverride Float? @map("sale_price_override")
+  salePriceOverride Int?   @map("sale_price_override") // centavos
   active         Boolean   @default(true)
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
@@ -85,7 +85,7 @@ model StockMovement {
   id          String       @id @default(uuid())
   type        String       // ENTRADA, SAIDA_VENDA, AJUSTE_PERDA, DEVOLUCAO
   quantity    Int
-  unitValue   Float        @map("unit_value")
+  unitValue   Int          @map("unit_value") // centavos
   observation String?
   createdAt   DateTime     @default(now()) @map("created_at")
 
@@ -100,16 +100,37 @@ model StockMovement {
 }
 
 // ---------------------------------------------------------------------------
+// Cliente — Comprador associado opcionalmente à venda
+// ---------------------------------------------------------------------------
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sales     Sale[]
+
+  @@map("customers")
+}
+
+// ---------------------------------------------------------------------------
 // Venda — Pedido / Registro de transação (RN-006)
 // ---------------------------------------------------------------------------
 
 model Sale {
   id            String        @id @default(uuid())
-  totalAmount   Float         @map("total_amount")
-  discount      Float         @default(0)
+  totalAmount   Int           @map("total_amount") // centavos
+  discount      Int           @default(0) // centavos
   paymentMethod String        @map("payment_method") // PIX, CARTAO_CREDITO, CARTAO_DEBITO, DINHEIRO
-  status        String        @default("CONCLUIDA")  // CONCLUIDA, CANCELADA
+  status        String        @default("CONCLUIDA")  // CONCLUIDA, PENDENTE
+  dueDate       DateTime?     @map("due_date")
   createdAt     DateTime      @default(now()) @map("created_at")
+
+  customerId    String?       @map("customer_id")
+  customer      Customer?     @relation(fields: [customerId], references: [id])
 
   items         SaleItem[]
   movements     StockMovement[]
@@ -124,7 +145,7 @@ model Sale {
 model SaleItem {
   id          String  @id @default(uuid())
   quantity    Int
-  unitValue   Float   @map("unit_value")
+  unitValue   Int     @map("unit_value") // centavos
 
   saleId      String  @map("sale_id")
   sale        Sale    @relation(fields: [saleId], references: [id])

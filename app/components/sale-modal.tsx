@@ -16,6 +16,8 @@ export function SaleModal({ isOpen, onClose, availableSkus }: SaleModalProps) {
   const [search, setSearch] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("PIX");
   const [discount, setDiscount] = useState(0);
+  const [customerName, setCustomerName] = useState("");
+  const [dueDate, setDueDate] = useState("");
   
   // Carrinho local { skuId: quantity }
   const [cart, setCart] = useState<Record<string, number>>({});
@@ -60,9 +62,8 @@ export function SaleModal({ isOpen, onClose, availableSkus }: SaleModalProps) {
     });
   }, [cart, availableSkus]);
 
-  // FIXME: O mockup real precisaria trazer o preço base do backend no getSkus.
-  // Por enquanto vamos assumir um preço mock na ausência do DTO para o total visual
-  const totalValue = cartItems.reduce((acc, item) => acc + (item.qty * 100), 0) - discount; 
+  const isPending = paymentMethod === "FIADO";
+  const totalValue = cartItems.reduce((acc, item) => acc + (item.qty * (item.sku.salePrice ?? 0)), 0) - discount;
   const totalItems = Object.values(cart).reduce((a, b) => a + b, 0);
 
   if (!isOpen) return null;
@@ -71,6 +72,10 @@ export function SaleModal({ isOpen, onClose, availableSkus }: SaleModalProps) {
     e.preventDefault();
     if (totalItems === 0) {
       setError("Adicione ao menos um item no carrinho.");
+      return;
+    }
+    if (isPending && !customerName.trim()) {
+      setError("Informe o nome do cliente para vendas fiadas.");
       return;
     }
 
@@ -83,6 +88,9 @@ export function SaleModal({ isOpen, onClose, availableSkus }: SaleModalProps) {
       await registerSale({
         paymentMethod,
         discount,
+        status: isPending ? "PENDENTE" : "CONCLUIDA",
+        customerName: customerName.trim() || undefined,
+        dueDate: isPending ? dueDate || undefined : undefined,
         items: itemsPayload,
       });
       
@@ -91,8 +99,10 @@ export function SaleModal({ isOpen, onClose, availableSkus }: SaleModalProps) {
       setCart({});
       setSearch("");
       setDiscount(0);
-    } catch (err: any) {
-      setError(err.message || "Erro ao processar venda (Verifique o estoque).");
+      setCustomerName("");
+      setDueDate("");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao processar venda (Verifique o estoque).");
     } finally {
       setLoading(false);
     }
@@ -128,6 +138,7 @@ export function SaleModal({ isOpen, onClose, availableSkus }: SaleModalProps) {
                     <div className="text-xs font-semibold text-primary mb-1">{sku.sku}</div>
                     <div className="font-medium text-sm text-foreground line-clamp-1">{sku.productName}</div>
                     <div className="text-xs text-muted-foreground mt-1">{sku.color} • {sku.size}</div>
+                    <div className="text-sm font-semibold text-foreground mt-2">R$ {(sku.salePrice ?? 0).toFixed(2)}</div>
                   </div>
                   <div className="mt-4 flex items-center justify-between">
                     <div className="text-xs font-medium px-2 py-1 bg-muted rounded-md text-foreground">
@@ -166,7 +177,7 @@ export function SaleModal({ isOpen, onClose, availableSkus }: SaleModalProps) {
                 <div key={sku.id} className="flex justify-between items-center p-3 bg-muted/20 border border-border rounded-lg">
                   <div>
                     <div className="text-sm font-medium text-foreground">{sku.sku}</div>
-                    <div className="text-xs text-muted-foreground">{qty}x (Preço Dinâmico no DB)</div>
+                    <div className="text-xs text-muted-foreground">{qty}x R$ {(sku.salePrice ?? 0).toFixed(2)}</div>
                   </div>
                   <div className="flex items-center gap-2 bg-background border border-border rounded-lg p-0.5">
                     <button onClick={() => removeFromCart(sku.id)} className="p-1 hover:bg-muted rounded text-foreground">
@@ -198,8 +209,23 @@ export function SaleModal({ isOpen, onClose, availableSkus }: SaleModalProps) {
                   <option value="CARTAO_CREDITO">Cartão de Crédito</option>
                   <option value="CARTAO_DEBITO">Cartão de Débito</option>
                   <option value="DINHEIRO">Dinheiro</option>
+                  <option value="FIADO">Fiado / A Prazo</option>
                 </select>
               </div>
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Cliente {isPending ? "(obrigatório)" : "(opcional)"}</label>
+                <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Nome do cliente"
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+              </div>
+
+              {isPending && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Data de vencimento</label>
+                  <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
+                    className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+                </div>
+              )}
               
               <div className="flex justify-between items-end gap-4">
                 <div className="flex-1">

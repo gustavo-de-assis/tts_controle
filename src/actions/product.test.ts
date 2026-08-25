@@ -76,6 +76,13 @@ describe('createProductWithSkus', () => {
     expect(result.product.name).toBe('Camiseta Básica')
     expect(result.skus.length).toBe(2)
 
+    expect(mockProductCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ baseCostPrice: 1000, baseSalePrice: 5000 }),
+    })
+    expect(mockStockMovementCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ unitValue: 1000 }),
+    })
+
     // Deve ter criado 2 SKUs
     expect(mockSkuCreate).toHaveBeenCalledTimes(2)
 

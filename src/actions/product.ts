@@ -2,6 +2,7 @@
 
 import { prisma } from "../lib/prisma";
 import { revalidatePath } from "next/cache";
+import { toCents } from "../domain/money";
 
 export interface CreateProductInput {
   name: string;
@@ -29,8 +30,8 @@ export async function createProductWithSkus(data: CreateProductInput) {
       data: {
         name: data.name,
         categoryId: data.categoryId,
-        baseCostPrice: data.baseCostPrice,
-        baseSalePrice: data.baseSalePrice,
+        baseCostPrice: toCents(data.baseCostPrice),
+        baseSalePrice: toCents(data.baseSalePrice),
       },
     });
 
@@ -57,7 +58,7 @@ export async function createProductWithSkus(data: CreateProductInput) {
             skuId: sku.id,
             type: "ENTRADA",
             quantity: sku.currentStock,
-            unitValue: data.baseCostPrice,
+            unitValue: toCents(data.baseCostPrice),
             observation: "Estoque Inicial via Cadastro de Produto",
           },
         });
@@ -69,4 +70,46 @@ export async function createProductWithSkus(data: CreateProductInput) {
 
   revalidatePath("/");
   return result;
+}
+
+export interface UpdateProductWithSkuInput {
+  productId: string;
+  skuId: string;
+  name: string;
+  baseCostPrice: number;
+  baseSalePrice: number;
+  sku: string;
+  color: string;
+  size: string;
+  minimumStock: number;
+}
+
+export async function updateProductWithSku(data: UpdateProductWithSkuInput) {
+  if (!data.productId || !data.skuId || !data.name.trim() || !data.sku.trim()) {
+    throw new Error("Produto, SKU e nome são obrigatórios.");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const product = await tx.product.update({
+      where: { id: data.productId },
+      data: {
+        name: data.name.trim(),
+        baseCostPrice: toCents(data.baseCostPrice),
+        baseSalePrice: toCents(data.baseSalePrice),
+      },
+    });
+
+    const sku = await tx.sku.update({
+      where: { id: data.skuId },
+      data: {
+        sku: data.sku.trim(),
+        color: data.color.trim(),
+        size: data.size.trim(),
+        minimumStock: data.minimumStock,
+      },
+    });
+
+    revalidatePath("/");
+    return { product, sku };
+  });
 }
