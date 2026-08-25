@@ -118,6 +118,7 @@ describe('createProductWithSkus', () => {
 
   it('deve rejeitar criação sem nome', async () => {
     await expect(
+      // @ts-expect-error - name é obrigatória
       createProductWithSkus({
         categoryId: 'cat-1',
         baseCostPrice: 10,
@@ -137,6 +138,7 @@ describe('createProductWithSkus', () => {
 
   it('deve rejeitar criação sem categoria', async () => {
     await expect(
+      // @ts-expect-error - categoryId é obrigatória
       createProductWithSkus({
         name: 'Camiseta',
         baseCostPrice: 10,
