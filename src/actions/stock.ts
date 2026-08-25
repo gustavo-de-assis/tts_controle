@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "../lib/prisma";
+import { Prisma } from "@prisma/client";
 import { SkuTableRow } from "../../app/components/sku-table";
 import { StatusEstoque } from "../domain/stock";
 import { revalidatePath } from "next/cache";
@@ -52,7 +53,7 @@ export async function registerStockEntry(data: RegisterStockEntryInput) {
     throw new Error("Quantidade e custo unitário devem ser maiores que zero.");
   }
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const sku = await tx.sku.findUnique({ where: { id: data.skuId } });
 
     if (!sku) {

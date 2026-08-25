@@ -1,5 +1,6 @@
 "use server";
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { revalidatePath } from "next/cache";
 import { toCents } from "../domain/money";
@@ -24,7 +25,7 @@ export async function createProductWithSkus(data: CreateProductInput) {
   }
 
   // Utiliza $transaction para garantir que Produto e SKUs sejam inseridos atomicamente
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // 1. Criar o Produto Pai
     const product = await tx.product.create({
       data: {
@@ -89,7 +90,7 @@ export async function updateProductWithSku(data: UpdateProductWithSkuInput) {
     throw new Error("Produto, SKU e nome são obrigatórios.");
   }
 
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const product = await tx.product.update({
       where: { id: data.productId },
       data: {

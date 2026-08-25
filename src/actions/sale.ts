@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "../lib/prisma";
+import {Prisma} from "@prisma/client";
 import { processarVenda } from "../domain/sale";
 import { validarVenda, type StatusVenda } from "../domain/sale";
 import { fromCents, toCents } from "../domain/money";
@@ -29,7 +30,7 @@ export async function registerSale(data: RegisterSaleInput) {
   validarVenda({ status, customerId });
 
   // Executa toda a lógica em uma transação para garantir integridade (RN-006)
-  const saleId = await prisma.$transaction(async (tx) => {
+  const saleId = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     let persistedCustomerId = data.customerId;
 
     if (data.customerId) {

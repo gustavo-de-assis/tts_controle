@@ -8,10 +8,10 @@ export async function getDashboardKpis() {
     where: { active: true }
   });
   
-  const totalStock = skus.reduce((acc, sku) => acc + sku.currentStock, 0);
+  const totalStock = skus.reduce((acc: number, sku: { currentStock: number }) => acc + sku.currentStock, 0);
 
   // 2. Alertas de Reposição (RN-003)
-  const alertsCount = skus.filter(sku => sku.currentStock <= sku.minimumStock).length;
+  const alertsCount = skus.filter((sku: { currentStock: number; minimumStock: number }) => sku.currentStock <= sku.minimumStock).length;
 
   // 3. Faturamento Mensal (mock, since we haven't seeded sales yet)
   // TODO: Implementar agregação real de `Sale` com Prisma no futuro.
