@@ -6,8 +6,10 @@ import { SkuTableRow } from "../../app/components/sku-table";
 import { StatusEstoque } from "../domain/stock";
 import { revalidatePath } from "next/cache";
 import { fromCents, toCents } from "../domain/money";
+import { requireUser } from "../lib/auth-guard";
 
 export async function getSkus(): Promise<SkuTableRow[]> {
+  await requireUser();
   const skus = await prisma.sku.findMany({
     where: { active: true },
     include: {
@@ -49,6 +51,7 @@ export interface RegisterStockEntryInput {
 }
 
 export async function registerStockEntry(data: RegisterStockEntryInput) {
+  await requireUser();
   if (data.quantity <= 0 || data.unitValue <= 0) {
     throw new Error("Quantidade e custo unitário devem ser maiores que zero.");
   }

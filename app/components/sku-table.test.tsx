@@ -3,6 +3,10 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { SkuTable, SkuTableRow } from './sku-table'
 import { StatusEstoque } from '../../src/domain/stock'
 
+vi.mock('../../src/lib/auth-guard', () => ({
+  requireUser: vi.fn().mockResolvedValue({ id: 'user-1', role: 'ADMIN' }),
+}))
+
 const mockData: SkuTableRow[] = [
   { 
     id: "1", 

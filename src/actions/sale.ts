@@ -5,6 +5,7 @@ import {Prisma} from "@prisma/client";
 import { processarVenda } from "../domain/sale";
 import { validarVenda, type StatusVenda } from "../domain/sale";
 import { fromCents, toCents } from "../domain/money";
+import { requireUser } from "../lib/auth-guard";
 import { revalidatePath } from "next/cache";
 
 export interface RegisterSaleInput {
@@ -21,6 +22,7 @@ export interface RegisterSaleInput {
 }
 
 export async function registerSale(data: RegisterSaleInput) {
+  await requireUser();
   if (!data.items || data.items.length === 0) {
     throw new Error("A venda precisa ter ao menos um item.");
   }

@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { revalidatePath } from "next/cache";
 import { toCents } from "../domain/money";
+import { requireUser } from "../lib/auth-guard";
 
 export interface CreateProductInput {
   name: string;
@@ -20,6 +21,7 @@ export interface CreateProductInput {
 }
 
 export async function createProductWithSkus(data: CreateProductInput) {
+  await requireUser();
   if (!data.name || !data.categoryId || data.skus.length === 0) {
     throw new Error("Dados inválidos: Nome, Categoria e ao menos um SKU são obrigatórios.");
   }
@@ -86,6 +88,7 @@ export interface UpdateProductWithSkuInput {
 }
 
 export async function updateProductWithSku(data: UpdateProductWithSkuInput) {
+  await requireUser();
   if (!data.productId || !data.skuId || !data.name.trim() || !data.sku.trim()) {
     throw new Error("Produto, SKU e nome são obrigatórios.");
   }

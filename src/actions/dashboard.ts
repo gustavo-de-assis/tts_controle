@@ -1,8 +1,10 @@
 "use server";
 
 import { prisma } from "../lib/prisma";
+import { requireUser } from "../lib/auth-guard";
 
 export async function getDashboardKpis() {
+  await requireUser();
   // 1. Total em Estoque
   const skus = await prisma.sku.findMany({
     where: { active: true }

@@ -1,5 +1,6 @@
 import { prisma } from '../src/lib/prisma'
 import { toCents } from '../src/domain/money'
+import { hash } from 'bcryptjs'
 
 async function main() {
   console.log('Iniciando o seed do banco de dados...')
@@ -13,6 +14,17 @@ async function main() {
   await prisma.category.deleteMany()
 
   console.log('Banco de dados limpo.')
+
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase()
+  const adminPassword = process.env.ADMIN_PASSWORD
+  if (adminEmail && adminPassword) {
+    const passwordHash = await hash(adminPassword, 12)
+    await prisma.user.upsert({
+      where: { email: adminEmail },
+      update: { name: 'Administrador', password: passwordHash, role: 'ADMIN' },
+      create: { name: 'Administrador', email: adminEmail, password: passwordHash, role: 'ADMIN' },
+    })
+  }
 
   // 1. Criar Categorias
   const catVestidos = await prisma.category.create({

@@ -10,9 +10,16 @@ import {
   Settings,
   HelpCircle
 } from "lucide-react";
+import { signOut } from "next-auth/react";
 
-export function Sidebar() {
+interface SidebarProps {
+  user?: { name?: string | null; email?: string | null; role?: string };
+}
+
+export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
+
+  if (pathname === "/login") return null;
 
   const navItems = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -89,10 +96,13 @@ export function Sidebar() {
             US
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-medium leading-none mb-1">Usuário</span>
-            <span className="text-xs text-muted-foreground">admin@stockapp.com</span>
+            <span className="text-sm font-medium leading-none mb-1">{user?.name ?? "Usuário"}</span>
+            <span className="text-xs text-muted-foreground">{user?.email ?? ""}</span>
           </div>
         </div>
+        <button type="button" onClick={() => signOut({ callbackUrl: "/login" })} className="mt-3 w-full rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition hover:bg-muted">
+          Sair
+        </button>
       </div>
     </aside>
   );

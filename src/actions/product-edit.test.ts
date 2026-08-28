@@ -9,6 +9,10 @@ vi.mock('../lib/prisma', () => ({
   prisma: { $transaction: mockTransaction },
 }))
 
+vi.mock('../lib/auth-guard', () => ({
+  requireUser: vi.fn().mockResolvedValue({ id: 'user-1', role: 'ADMIN' }),
+}))
+
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }))

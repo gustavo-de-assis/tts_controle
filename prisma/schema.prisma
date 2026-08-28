@@ -28,6 +28,22 @@ model Category {
 }
 
 // ---------------------------------------------------------------------------
+// Usuário — Identidade e acesso ao sistema
+// ---------------------------------------------------------------------------
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("ADMIN") // ADMIN, OPERADOR
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------------
 // Produto (Pai) — Modelo genérico da peça de roupa
 // ---------------------------------------------------------------------------
 
