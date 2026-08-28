@@ -3,7 +3,8 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { revalidatePath } from "next/cache";
-import { toCents } from "../domain/money";
+import { toCents, fromCents } from "../domain/money";
+import { StatusEstoque } from "../domain/stock";
 import { requireUser } from "../lib/auth-guard";
 
 export interface CreateProductInput {
@@ -73,6 +74,72 @@ export async function createProductWithSkus(data: CreateProductInput) {
 
   revalidatePath("/");
   return result;
+}
+
+// ---------------------------------------------------------------------------
+// Listagem de Produtos com SKUs — Catálogo
+// ---------------------------------------------------------------------------
+
+export interface ProductCatalogItem {
+  id: string;
+  name: string;
+  categoryName: string;
+  baseCostPrice: number; // em reais
+  baseSalePrice: number; // em reais
+  totalStock: number;
+  skus: Array<{
+    id: string;
+    sku: string;
+    color: string;
+    size: string;
+    currentStock: number;
+    minimumStock: number;
+    status: StatusEstoque;
+  }>;
+}
+
+export async function getProductsWithSkus(
+  filters?: { search?: string; categoryId?: string }
+): Promise<ProductCatalogItem[]> {
+  await requireUser();
+
+  const where: Record<string, unknown> = {};
+  if (filters?.search) {
+    where.name = { contains: filters.search, mode: "insensitive" };
+  }
+  if (filters?.categoryId) {
+    where.categoryId = filters.categoryId;
+  }
+
+  const products = await prisma.product.findMany({
+    where,
+    include: {
+      category: true,
+      skus: { where: { active: true } },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  return products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    categoryName: p.category.name,
+    baseCostPrice: fromCents(p.baseCostPrice),
+    baseSalePrice: fromCents(p.baseSalePrice),
+    totalStock: p.skus.reduce((sum, s) => sum + s.currentStock, 0),
+    skus: p.skus.map((s) => ({
+      id: s.id,
+      sku: s.sku,
+      color: s.color,
+      size: s.size,
+      currentStock: s.currentStock,
+      minimumStock: s.minimumStock,
+      status:
+        s.currentStock <= s.minimumStock
+          ? StatusEstoque.ESTOQUE_CRITICO
+          : StatusEstoque.NORMAL,
+    })),
+  }));
 }
 
 export interface UpdateProductWithSkuInput {
