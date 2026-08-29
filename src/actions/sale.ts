@@ -129,3 +129,110 @@ export async function registerSale(data: RegisterSaleInput) {
   revalidatePath("/");
   return saleId;
 }
+
+// ---------------------------------------------------------------------------
+// Histórico de Vendas — Listagem com Filtros
+// ---------------------------------------------------------------------------
+
+export interface SaleHistoryItem {
+  id: string;
+  createdAt: string;        // ISO string
+  customerName: string;     // "Cliente não informado" se null
+  paymentMethod: string;
+  totalAmount: number;      // em reais
+  discount: number;         // em reais
+  status: "CONCLUIDA" | "PENDENTE";
+  dueDate: string | null;
+  items: Array<{
+    id: string;
+    skuCode: string;
+    productName: string;
+    color: string;
+    size: string;
+    quantity: number;
+    unitValue: number;      // em reais
+  }>;
+}
+
+export interface GetSalesHistoryFilters {
+  startDate?: string;
+  endDate?: string;
+  status?: string;
+  paymentMethod?: string;
+}
+
+export async function getSalesHistory(
+  filters?: GetSalesHistoryFilters
+): Promise<SaleHistoryItem[]> {
+  await requireUser();
+
+  const where: Record<string, unknown> = {};
+
+  if (filters?.status) {
+    where.status = filters.status;
+  }
+  if (filters?.paymentMethod) {
+    where.paymentMethod = filters.paymentMethod;
+  }
+  if (filters?.startDate || filters?.endDate) {
+    const createdAt: Record<string, Date> = {};
+    if (filters.startDate) createdAt.gte = new Date(filters.startDate);
+    if (filters.endDate)   createdAt.lte = new Date(filters.endDate);
+    where.createdAt = createdAt;
+  }
+
+  const sales = await prisma.sale.findMany({
+    where,
+    include: {
+      customer: true,
+      items: {
+        include: {
+          sku: {
+            include: { product: true },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return sales.map((s) => ({
+    id: s.id,
+    createdAt: s.createdAt.toISOString(),
+    customerName: s.customer?.name ?? "Cliente não informado",
+    paymentMethod: s.paymentMethod,
+    totalAmount: fromCents(s.totalAmount),
+    discount: fromCents(s.discount),
+    status: s.status as "CONCLUIDA" | "PENDENTE",
+    dueDate: s.dueDate ? s.dueDate.toISOString() : null,
+    items: s.items.map((item) => ({
+      id: item.id,
+      skuCode: item.sku.sku,
+      productName: item.sku.product.name,
+      color: item.sku.color,
+      size: item.sku.size,
+      quantity: item.quantity,
+      unitValue: fromCents(item.unitValue),
+    })),
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Dar Baixa em Venda Pendente
+// ---------------------------------------------------------------------------
+
+export async function markSaleAsConcluded(saleId: string): Promise<void> {
+  await requireUser();
+
+  if (!saleId) {
+    throw new Error("ID da venda é obrigatório.");
+  }
+
+  await prisma.sale.update({
+    where: { id: saleId },
+    data: { status: "CONCLUIDA" },
+  });
+
+  revalidatePath("/vendas");
+  revalidatePath("/");
+}
