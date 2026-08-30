@@ -34,7 +34,7 @@ export function Sidebar({ user }: SidebarProps) {
   ];
 
   return (
-    <aside className="w-64 border-r border-border bg-sidebar h-screen flex flex-col sticky top-0 shrink-0">
+    <aside className="hidden md:flex w-64 border-r border-border bg-sidebar h-screen flex-col sticky top-0 shrink-0">
       <div className="p-6">
         <div className="flex items-center gap-3">
           <div className="bg-primary text-primary-foreground p-1.5 rounded-md font-bold text-xl leading-none">

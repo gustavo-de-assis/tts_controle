@@ -31,36 +31,46 @@ const mockData: SkuTableRow[] = [
 ]
 
 describe('UI: SkuTable Component', () => {
-  it('deve renderizar as linhas da tabela com os dados fornecidos', () => {
+  it('deve renderizar as linhas da tabela e os cards mobile com os dados fornecidos', () => {
     render(<SkuTable data={mockData} />)
-    expect(screen.getByText('TEST-01')).toBeInTheDocument()
-    expect(screen.getByText('Produto Teste')).toBeInTheDocument()
-    expect(screen.getByText('TEST-02')).toBeInTheDocument()
+    expect(screen.getAllByText('TEST-01')[0]).toBeInTheDocument()
+    expect(screen.getAllByText('Produto Teste')[0]).toBeInTheDocument()
+    expect(screen.getAllByText('TEST-02')[0]).toBeInTheDocument()
   })
 
   it('deve exibir o badge Normal para estoque normal', () => {
     render(<SkuTable data={[mockData[0]]} />)
-    expect(screen.getByText('Normal')).toBeInTheDocument()
+    expect(screen.getAllByText('Normal')[0]).toBeInTheDocument()
   })
 
   it('deve exibir o badge Estoque Crítico para estoque crítico', () => {
     render(<SkuTable data={[mockData[1]]} />)
-    expect(screen.getByText('Estoque Crítico')).toBeInTheDocument()
+    expect(screen.getAllByText('Estoque Crítico')[0]).toBeInTheDocument()
   })
 
   it('deve filtrar os resultados ao digitar no campo de busca', () => {
     render(<SkuTable data={mockData} />)
     
-    // Ambas as linhas inicialmente visíveis
-    expect(screen.getByText('TEST-01')).toBeInTheDocument()
-    expect(screen.getByText('TEST-02')).toBeInTheDocument()
+    // Ambas as linhas/cards inicialmente visíveis
+    expect(screen.getAllByText('TEST-01')[0]).toBeInTheDocument()
+    expect(screen.getAllByText('TEST-02')[0]).toBeInTheDocument()
     
     // Buscar por TEST-01
     const searchInput = screen.getByPlaceholderText('Buscar SKU ou Produto...')
     fireEvent.change(searchInput, { target: { value: 'TEST-01' } })
     
     // Apenas TEST-01 deve estar visível
-    expect(screen.getByText('TEST-01')).toBeInTheDocument()
+    expect(screen.getAllByText('TEST-01')[0]).toBeInTheDocument()
     expect(screen.queryByText('TEST-02')).not.toBeInTheDocument()
   })
+
+  it('deve renderizar a visão de cards mobile com a razão do estoque (atual / mínimo)', () => {
+    render(<SkuTable data={mockData} />)
+    // No mobile card render, deve renderizar os dados e razão de estoque
+    const stockRatios = screen.getAllByTestId('sku-stock-ratio-mobile')
+    expect(stockRatios).toHaveLength(2)
+    expect(stockRatios[0].textContent).toContain('10 / 2')
+    expect(stockRatios[1].textContent).toContain('1 / 5')
+  })
 })
+

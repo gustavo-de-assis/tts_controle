@@ -27,8 +27,8 @@ export default async function Home() {
       <TopHeader />
 
       {/* Main Content */}
-      <main className="flex-1 p-8 overflow-y-auto bg-background">
-        <div className="max-w-7xl mx-auto space-y-8">
+      <main className="flex-1 p-4 md:p-8 pb-20 md:pb-6 overflow-y-auto bg-background">
+        <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
           
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -41,7 +41,7 @@ export default async function Home() {
           </div>
 
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             <KpiCard 
               title="Faturamento Mensal" 
               value={formatCurrency(kpis.monthlyRevenue)} 
