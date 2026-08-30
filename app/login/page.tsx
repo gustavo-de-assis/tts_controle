@@ -32,7 +32,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-12 text-slate-100">
+    <main className="flex h-screen w-full overflow-y-auto items-center justify-center bg-slate-950 px-4 py-12 text-slate-100">
       <div className="grid w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl md:grid-cols-[1fr_1.1fr]">
         <section className="hidden flex-col justify-between bg-orange-500 p-10 text-slate-950 md:flex">
           <div className="flex items-center gap-3 font-semibold tracking-tight">

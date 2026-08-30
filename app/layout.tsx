@@ -23,9 +23,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       lang="pt-BR"
       className={`${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col md:flex-row bg-background text-foreground">
+      <body className="h-screen w-screen flex flex-col md:flex-row bg-background text-foreground overflow-hidden">
         <Sidebar user={session?.user} />
-        <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+        <div className="flex-1 flex flex-col h-screen max-h-screen overflow-hidden relative">
           {children}
         </div>
         <BottomNav />
