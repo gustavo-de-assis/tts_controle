@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Search, Filter, ArrowUpDown } from "lucide-react";
+import { Search, ArrowUpDown, AlertTriangle } from "lucide-react";
 import { StatusEstoque } from "../../src/domain/stock";
 
 export interface SkuTableRow {
@@ -67,11 +67,70 @@ export function SkuTable({ data }: { data: SkuTableRow[] }) {
             onChange={handleSearchChange}
           />
         </div>
-
       </div>
 
-      {/* Table Content */}
-      <div className="overflow-x-auto">
+      {/* Mobile Stacked Cards View (block md:hidden) */}
+      <div className="block md:hidden p-3 space-y-3 bg-muted/10">
+        {paginatedData.length > 0 ? (
+          paginatedData.map((row) => (
+            <div
+              key={row.id}
+              className="p-4 bg-card border border-border rounded-xl flex items-start justify-between gap-3 shadow-xs"
+            >
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-0.5">
+                  SKU
+                </span>
+                <h3 className="text-base font-semibold text-foreground leading-snug">
+                  {row.productName}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {row.color} - {row.size}
+                </p>
+              </div>
+
+              <div className="flex flex-col items-end gap-2 shrink-0">
+                <div
+                  data-testid="sku-stock-ratio-mobile"
+                  className="flex items-center gap-1 text-sm font-bold"
+                >
+                  <span
+                    className={
+                      row.status === StatusEstoque.ESTOQUE_CRITICO
+                        ? "text-danger"
+                        : "text-foreground"
+                    }
+                  >
+                    {row.currentStock}
+                  </span>
+                  <span className="text-muted-foreground font-normal mx-0.5"> / </span>
+                  <span className="text-muted-foreground">{row.minimumStock}</span>
+                  {row.status === StatusEstoque.ESTOQUE_CRITICO && (
+                    <AlertTriangle className="w-4 h-4 text-danger inline-block ml-0.5 shrink-0" />
+                  )}
+                </div>
+
+                {row.status === StatusEstoque.ESTOQUE_CRITICO ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-danger/10 text-danger border border-danger/20">
+                    Estoque Crítico
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-success/10 text-success border border-success/20">
+                    Normal
+                  </span>
+                )}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="p-6 text-center text-sm text-muted-foreground">
+            Nenhum SKU encontrado para a busca &quot;{searchTerm}&quot;.
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View (hidden md:block) */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border">
             <tr>
@@ -101,9 +160,14 @@ export function SkuTable({ data }: { data: SkuTableRow[] }) {
                     {row.color} - {row.size}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <span className="font-medium text-foreground">{row.currentStock}</span>
-                    <span className="text-muted-foreground mx-1">/</span>
-                    <span className="text-muted-foreground">{row.minimumStock}</span>
+                    <span
+                      data-testid="sku-stock-ratio"
+                      className="inline-flex items-center gap-1 font-medium"
+                    >
+                      <span className="text-foreground">{row.currentStock}</span>
+                      <span className="text-muted-foreground mx-1">/</span>
+                      <span className="text-muted-foreground">{row.minimumStock}</span>
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     {row.status === StatusEstoque.ESTOQUE_CRITICO ? (
