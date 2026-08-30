@@ -3,7 +3,7 @@ import { Search, Bell } from "lucide-react";
 
 export function TopHeader() {
   return (
-    <header className="bg-card border-b border-border h-16 flex items-center justify-between px-4 md:px-8 shrink-0">
+    <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-md border-b border-border h-16 flex items-center justify-between px-4 md:px-8 shrink-0">
       {/* Mobile Logo */}
       <div className="flex md:hidden items-center gap-2.5">
         <div className="bg-primary text-primary-foreground p-1.5 rounded-md font-bold text-lg leading-none">
