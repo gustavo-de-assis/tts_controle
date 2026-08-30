@@ -83,6 +83,7 @@ export async function createProductWithSkus(data: CreateProductInput) {
 export interface ProductCatalogItem {
   id: string;
   name: string;
+  categoryId: string;
   categoryName: string;
   baseCostPrice: number; // em reais
   baseSalePrice: number; // em reais
@@ -123,6 +124,7 @@ export async function getProductsWithSkus(
   return products.map((p) => ({
     id: p.id,
     name: p.name,
+    categoryId: p.categoryId,
     categoryName: p.category.name,
     baseCostPrice: fromCents(p.baseCostPrice),
     baseSalePrice: fromCents(p.baseSalePrice),
@@ -140,6 +142,40 @@ export async function getProductsWithSkus(
           : StatusEstoque.NORMAL,
     })),
   }));
+}
+
+export interface UpdateProductInput {
+  productId: string;
+  name: string;
+  categoryId?: string;
+  baseCostPrice: number;
+  baseSalePrice: number;
+}
+
+export async function updateProduct(data: UpdateProductInput) {
+  await requireUser();
+  if (!data.productId || !data.name.trim()) {
+    throw new Error("ID do produto e nome são obrigatórios.");
+  }
+
+  const updateData: Record<string, unknown> = {
+    name: data.name.trim(),
+    baseCostPrice: toCents(data.baseCostPrice),
+    baseSalePrice: toCents(data.baseSalePrice),
+  };
+
+  if (data.categoryId) {
+    updateData.categoryId = data.categoryId;
+  }
+
+  const product = await prisma.product.update({
+    where: { id: data.productId },
+    data: updateData,
+  });
+
+  revalidatePath("/");
+  revalidatePath("/produtos");
+  return product;
 }
 
 export interface UpdateProductWithSkuInput {

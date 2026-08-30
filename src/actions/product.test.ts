@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { createProductWithSkus } from './product'
+import { createProductWithSkus, updateProduct } from './product'
 
 // Mock do Prisma
 const mockProductCreate = vi.hoisted(() => vi.fn())
+const mockProductUpdate = vi.hoisted(() => vi.fn())
 const mockSkuCreate = vi.hoisted(() => vi.fn())
 const mockStockMovementCreate = vi.hoisted(() => vi.fn())
 const mockTransaction = vi.hoisted(() => vi.fn())
@@ -10,7 +11,10 @@ const mockTransaction = vi.hoisted(() => vi.fn())
 vi.mock('../lib/prisma', () => ({
   prisma: {
     $transaction: mockTransaction,
-    product: { create: mockProductCreate },
+    product: {
+      create: mockProductCreate,
+      update: mockProductUpdate,
+    },
     sku: { create: mockSkuCreate },
     stockMovement: { create: mockStockMovementCreate },
   },
@@ -30,7 +34,7 @@ describe('createProductWithSkus', () => {
 
     mockTransaction.mockImplementation(async (cb) => {
       return cb({
-        product: { create: mockProductCreate },
+        product: { create: mockProductCreate, update: mockProductUpdate },
         sku: { create: mockSkuCreate },
         stockMovement: { create: mockStockMovementCreate },
       })
@@ -40,8 +44,8 @@ describe('createProductWithSkus', () => {
       id: 'prod-1',
       name: 'Camiseta Básica',
       categoryId: 'cat-1',
-      baseCostPrice: 10,
-      baseSalePrice: 50,
+      baseCostPrice: 1000,
+      baseSalePrice: 5000,
     })
 
     mockSkuCreate.mockImplementation(async (args: any) => ({
@@ -192,5 +196,50 @@ describe('createProductWithSkus', () => {
         ],
       })
     ).rejects.toThrow('Falha ao conectar ao banco')
+  })
+})
+
+describe('updateProduct', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockProductUpdate.mockResolvedValue({
+      id: 'prod-1',
+      name: 'Camiseta Atualizada',
+      categoryId: 'cat-2',
+      baseCostPrice: 2000,
+      baseSalePrice: 6000,
+    })
+  })
+
+  it('deve atualizar o produto com valores convertidos em centavos', async () => {
+    const result = await updateProduct({
+      productId: 'prod-1',
+      name: 'Camiseta Atualizada',
+      categoryId: 'cat-2',
+      baseCostPrice: 20,
+      baseSalePrice: 60,
+    })
+
+    expect(mockProductUpdate).toHaveBeenCalledWith({
+      where: { id: 'prod-1' },
+      data: {
+        name: 'Camiseta Atualizada',
+        categoryId: 'cat-2',
+        baseCostPrice: 2000,
+        baseSalePrice: 6000,
+      },
+    })
+    expect(result.name).toBe('Camiseta Atualizada')
+  })
+
+  it('deve lançar erro se productId ou name forem inválidos', async () => {
+    await expect(
+      updateProduct({
+        productId: '',
+        name: 'Teste',
+        baseCostPrice: 10,
+        baseSalePrice: 20,
+      })
+    ).rejects.toThrow('ID do produto e nome são obrigatórios.')
   })
 })

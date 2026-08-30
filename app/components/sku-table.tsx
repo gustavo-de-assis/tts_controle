@@ -1,10 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
-import { Search, Filter, ArrowUpDown, PackagePlus, Pencil } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { Search, Filter, ArrowUpDown } from "lucide-react";
 import { StatusEstoque } from "../../src/domain/stock";
-import { StockEntryModal } from "./stock-entry-modal";
-import { ProductEditModal } from "./product-edit-modal";
 
 export interface SkuTableRow {
   id: string;
@@ -21,16 +19,37 @@ export interface SkuTableRow {
   status: StatusEstoque;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 export function SkuTable({ data }: { data: SkuTableRow[] }) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [entrySku, setEntrySku] = useState<SkuTableRow | null>(null);
-  const [editSku, setEditSku] = useState<SkuTableRow | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const filteredData = data.filter(
-    (item) =>
-      item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.productName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredData = useMemo(() => {
+    return data.filter(
+      (item) =>
+        item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.productName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [data, searchTerm]);
+
+  // Total de páginas
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / ITEMS_PER_PAGE));
+
+  // Reset da página quando a busca muda
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  // Dados fatiados para a página atual
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredData, currentPage]);
+
+  const startIndex = filteredData.length > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0;
+  const endIndex = Math.min(currentPage * ITEMS_PER_PAGE, filteredData.length);
 
   return (
     <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col">
@@ -45,7 +64,7 @@ export function SkuTable({ data }: { data: SkuTableRow[] }) {
             className="block w-full pl-10 pr-3 py-2 border border-border rounded-md leading-5 bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent sm:text-sm"
             placeholder="Buscar SKU ou Produto..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
           />
         </div>
         <div className="flex items-center gap-2">
@@ -71,12 +90,11 @@ export function SkuTable({ data }: { data: SkuTableRow[] }) {
               <th scope="col" className="px-6 py-3 font-semibold tracking-wider">Cor / Tamanho</th>
               <th scope="col" className="px-6 py-3 font-semibold tracking-wider text-right">Estoque / Mínimo</th>
               <th scope="col" className="px-6 py-3 font-semibold tracking-wider">Status</th>
-              <th scope="col" className="px-6 py-3 font-semibold tracking-wider text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {filteredData.length > 0 ? (
-              filteredData.map((row) => (
+            {paginatedData.length > 0 ? (
+              paginatedData.map((row) => (
                 <tr key={row.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-6 py-4 font-medium text-foreground whitespace-nowrap">
                     {row.sku}
@@ -103,21 +121,11 @@ export function SkuTable({ data }: { data: SkuTableRow[] }) {
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-end gap-1">
-                    <button type="button" onClick={() => setEntrySku(row)} title="Dar entrada" aria-label={`Dar entrada em ${row.sku}`} className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary">
-                      <PackagePlus className="h-4 w-4" />
-                    </button>
-                    <button type="button" onClick={() => setEditSku(row)} title="Editar produto" aria-label={`Editar produto ${row.productName}`} className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    </div>
-                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
+                <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
                   Nenhum SKU encontrado para a busca &quot;{searchTerm}&quot;.
                 </td>
               </tr>
@@ -126,17 +134,31 @@ export function SkuTable({ data }: { data: SkuTableRow[] }) {
         </table>
       </div>
       
-      {/* Table Footer / Pagination Mock */}
-      <div className="p-4 border-t border-border flex items-center justify-between text-sm text-muted-foreground bg-muted/20">
-        <span>Mostrando <strong>{filteredData.length}</strong> de <strong>{data.length}</strong> resultados</span>
-        <div className="flex gap-1">
-          <button className="px-3 py-1 border border-border rounded hover:bg-muted disabled:opacity-50" disabled>Anterior</button>
-          <button className="px-3 py-1 border border-border rounded hover:bg-muted">Próximo</button>
+      {/* Table Footer / Pagination */}
+      <div className="p-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground bg-muted/20">
+        <span>
+          Mostrando <strong>{startIndex}</strong> a <strong>{endIndex}</strong> de <strong>{filteredData.length}</strong> resultados
+        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs">Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong></span>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 border border-border rounded-lg text-xs hover:bg-muted disabled:opacity-40 transition-colors"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 border border-border rounded-lg text-xs hover:bg-muted disabled:opacity-40 transition-colors"
+            >
+              Próximo
+            </button>
+          </div>
         </div>
       </div>
-
-      <StockEntryModal isOpen={entrySku !== null} sku={entrySku} onClose={() => setEntrySku(null)} />
-      <ProductEditModal key={editSku?.id ?? "none"} isOpen={editSku !== null} sku={editSku} onClose={() => setEditSku(null)} />
     </div>
   );
 }

@@ -12,15 +12,22 @@ import {
   CheckCircle2,
   DollarSign,
   Layers,
+  Pencil,
+  PackagePlus,
 } from "lucide-react";
 import { StatusEstoque } from "../../src/domain/stock";
 import type { ProductCatalogItem } from "../../src/actions/product";
 import { ProductModal } from "./product-modal";
+import { ProductParentEditModal } from "./product-parent-edit-modal";
+import { StockEntryModal } from "./stock-entry-modal";
+import type { SkuTableRow } from "./sku-table";
 
 interface ProductCatalogTableProps {
   products: ProductCatalogItem[];
   categories: { id: string; name: string }[];
 }
+
+const ITEMS_PER_PAGE = 10;
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("pt-BR", {
@@ -35,7 +42,12 @@ export function ProductCatalogTable({
   const [search, setSearch] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Modais
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<ProductCatalogItem | null>(null);
+  const [stockEntrySku, setStockEntrySku] = useState<SkuTableRow | null>(null);
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -51,6 +63,23 @@ export function ProductCatalogTable({
     });
   }, [products, search, selectedCategoryId, categories]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedCategoryId(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filtered, currentPage]);
+
   const toggleExpand = (id: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
@@ -62,6 +91,9 @@ export function ProductCatalogTable({
       return next;
     });
   };
+
+  const startIndex = filtered.length > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0;
+  const endIndex = Math.min(currentPage * ITEMS_PER_PAGE, filtered.length);
 
   return (
     <>
@@ -76,7 +108,7 @@ export function ProductCatalogTable({
             id="product-search"
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={handleSearchChange}
             placeholder="Buscar produto ou categoria..."
             className="block w-full pl-10 pr-3 py-2.5 border border-border rounded-xl bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-sm transition-colors"
           />
@@ -87,7 +119,7 @@ export function ProductCatalogTable({
           <select
             id="category-filter"
             value={selectedCategoryId}
-            onChange={(e) => setSelectedCategoryId(e.target.value)}
+            onChange={handleCategoryChange}
             className="appearance-none pl-4 pr-10 py-2.5 border border-border rounded-xl bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-colors cursor-pointer"
           >
             <option value="">Todas as Categorias</option>
@@ -112,9 +144,9 @@ export function ProductCatalogTable({
       </div>
 
       {/* ── Tabela / Accordion ──────────────────────────────────────── */}
-      <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col">
         {/* Cabeçalho da Tabela */}
-        <div className="hidden md:grid grid-cols-[2.5rem_1fr_1fr_1fr_1fr_1fr] px-5 py-3 border-b border-border bg-muted/40 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <div className="hidden md:grid grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_4rem] px-5 py-3 border-b border-border bg-muted/40 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           <div />
           <div className="flex items-center gap-1.5">
             <Package className="w-3.5 h-3.5" /> Produto
@@ -131,9 +163,10 @@ export function ProductCatalogTable({
           <div className="flex items-center gap-1.5 justify-end">
             <Layers className="w-3.5 h-3.5" /> Total Estoque
           </div>
+          <div className="text-center">Ações</div>
         </div>
 
-        {filtered.length === 0 ? (
+        {paginatedProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
             <Package className="w-12 h-12 opacity-30" />
             <p className="text-sm font-medium">Nenhum produto encontrado.</p>
@@ -145,7 +178,7 @@ export function ProductCatalogTable({
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {filtered.map((product) => {
+            {paginatedProducts.map((product) => {
               const isExpanded = expandedIds.has(product.id);
               const hasCritical = product.skus.some(
                 (s) => s.status === StatusEstoque.ESTOQUE_CRITICO
@@ -154,24 +187,27 @@ export function ProductCatalogTable({
               return (
                 <div key={product.id}>
                   {/* ── Linha do Produto Pai ─────────────────────── */}
-                  <button
-                    type="button"
-                    onClick={() => toggleExpand(product.id)}
-                    aria-expanded={isExpanded}
-                    aria-label={`${isExpanded ? "Recolher" : "Expandir"} variações de ${product.name}`}
-                    className="w-full grid grid-cols-[2.5rem_1fr] md:grid-cols-[2.5rem_1fr_1fr_1fr_1fr_1fr] items-center px-5 py-4 hover:bg-muted/30 transition-colors text-left group"
-                  >
-                    {/* Ícone expansão */}
-                    <div className="flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors">
+                  <div className="grid grid-cols-[2.5rem_1fr] md:grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_4rem] items-center px-5 py-4 hover:bg-muted/30 transition-colors text-left group">
+                    {/* Botão de Expansão */}
+                    <button
+                      type="button"
+                      onClick={() => toggleExpand(product.id)}
+                      aria-expanded={isExpanded}
+                      aria-label={`${isExpanded ? "Recolher" : "Expandir"} variações de ${product.name}`}
+                      className="flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors"
+                    >
                       {isExpanded ? (
                         <ChevronDown className="w-4 h-4" />
                       ) : (
                         <ChevronRight className="w-4 h-4" />
                       )}
-                    </div>
+                    </button>
 
                     {/* Nome + badge crítico */}
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div
+                      onClick={() => toggleExpand(product.id)}
+                      className="flex items-center gap-2 min-w-0 cursor-pointer"
+                    >
                       <span className="font-semibold text-foreground truncate">
                         {product.name}
                       </span>
@@ -213,20 +249,36 @@ export function ProductCatalogTable({
                         un.
                       </span>
                     </div>
-                  </button>
+
+                    {/* Botão de Edição do Produto Pai */}
+                    <div className="hidden md:flex justify-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingProduct(product);
+                        }}
+                        title={`Editar produto ${product.name}`}
+                        className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
 
                   {/* ── Variações de SKU (Accordion) ─────────────── */}
                   {isExpanded && (
                     <div className="bg-muted/20 border-t border-border/50">
                       {/* Sub-cabeçalho das variações */}
-                      <div className="hidden md:grid grid-cols-[2.5rem_1fr_1fr_1fr_1fr_1fr_1fr] px-5 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/50">
+                      <div className="hidden md:grid grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_1fr_4rem] px-5 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/50">
                         <div />
                         <div>Código SKU</div>
                         <div>Cor</div>
                         <div>Tamanho</div>
-                        <div className="text-right">Saldo</div>
+                        <div className="text-right">Qtde</div>
                         <div className="text-right">Mín.</div>
                         <div className="text-center">Status</div>
+                        <div className="text-center">Ações</div>
                       </div>
 
                       {product.skus.length === 0 ? (
@@ -240,7 +292,7 @@ export function ProductCatalogTable({
                           return (
                             <div
                               key={sku.id}
-                              className="grid grid-cols-[2.5rem_1fr] md:grid-cols-[2.5rem_1fr_1fr_1fr_1fr_1fr_1fr] items-center px-5 py-3 border-b border-border/30 last:border-b-0 hover:bg-muted/20 transition-colors"
+                              className="grid grid-cols-[2.5rem_1fr] md:grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_1fr_4rem] items-center px-5 py-3 border-b border-border/30 last:border-b-0 hover:bg-muted/20 transition-colors"
                             >
                               {/* Ícone sub-nível */}
                               <div className="flex items-center justify-center">
@@ -252,7 +304,7 @@ export function ProductCatalogTable({
                                 {sku.sku}
                                 {/* Mobile: exibe info compacta */}
                                 <div className="md:hidden text-muted-foreground font-sans font-normal mt-0.5">
-                                  {sku.color} · {sku.size} · Saldo:{" "}
+                                  {sku.color} · {sku.size} · Qtde:{" "}
                                   <span
                                     className={
                                       isCritical
@@ -277,7 +329,7 @@ export function ProductCatalogTable({
                                 </span>
                               </div>
 
-                              {/* Saldo Atual */}
+                              {/* Qtde (Quantidade) */}
                               <div className="hidden md:block text-right">
                                 <span
                                   className={`font-bold text-sm ${
@@ -309,6 +361,31 @@ export function ProductCatalogTable({
                                   </span>
                                 )}
                               </div>
+
+                              {/* Botão de Ação para Entrada de Estoque no SKU */}
+                              <div className="hidden md:flex justify-center">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setStockEntrySku({
+                                      id: sku.id,
+                                      sku: sku.sku,
+                                      productName: product.name,
+                                      color: sku.color,
+                                      size: sku.size,
+                                      currentStock: sku.currentStock,
+                                      minimumStock: sku.minimumStock,
+                                      status: sku.status,
+                                      baseCostPrice: product.baseCostPrice,
+                                      baseSalePrice: product.baseSalePrice,
+                                    })
+                                  }
+                                  title={`Dar entrada de estoque em ${sku.sku}`}
+                                  className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent/10 hover:text-accent transition-colors"
+                                >
+                                  <PackagePlus className="w-4 h-4" />
+                                </button>
+                              </div>
                             </div>
                           );
                         })
@@ -321,26 +398,56 @@ export function ProductCatalogTable({
           </div>
         )}
 
-        {/* Rodapé */}
-        <div className="px-5 py-3 border-t border-border bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
+        {/* Rodapé / Paginação */}
+        <div className="px-5 py-4 border-t border-border bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
           <span>
-            Exibindo{" "}
-            <strong className="text-foreground">{filtered.length}</strong> de{" "}
-            <strong className="text-foreground">{products.length}</strong>{" "}
-            produto{products.length !== 1 ? "s" : ""}
+            Exibindo <strong className="text-foreground">{startIndex}</strong> a{" "}
+            <strong className="text-foreground">{endIndex}</strong> de{" "}
+            <strong className="text-foreground">{filtered.length}</strong>{" "}
+            produto{filtered.length !== 1 ? "s" : ""}
           </span>
-          <span>
-            {products.reduce((sum, p) => sum + p.skus.length, 0)} variações no
-            total
-          </span>
+          <div className="flex items-center gap-2">
+            <span>
+              Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
+            </span>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 border border-border rounded-lg text-xs hover:bg-muted disabled:opacity-40 transition-colors"
+              >
+                Anterior
+              </button>
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 border border-border rounded-lg text-xs hover:bg-muted disabled:opacity-40 transition-colors"
+              >
+                Próximo
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ── Modal de Criação ────────────────────────────────────────── */}
+      {/* ── Modais ─────────────────────────────────────────────────── */}
       <ProductModal
         isOpen={isProductModalOpen}
         onClose={() => setIsProductModalOpen(false)}
         categories={categories}
+      />
+
+      <ProductParentEditModal
+        isOpen={editingProduct !== null}
+        product={editingProduct}
+        categories={categories}
+        onClose={() => setEditingProduct(null)}
+      />
+
+      <StockEntryModal
+        isOpen={stockEntrySku !== null}
+        sku={stockEntrySku}
+        onClose={() => setStockEntrySku(null)}
       />
     </>
   );

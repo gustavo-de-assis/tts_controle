@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, useMemo } from "react";
 import {
   DollarSign,
   TrendingUp,
@@ -37,6 +37,8 @@ export interface ReportsViewProps {
 export type PeriodPreset = "month" | "30days" | "custom";
 export type ActiveTab = "financial" | "performance" | "stagnant";
 
+const ITEMS_PER_PAGE = 10;
+
 export function ReportsView({
   initialFinancialData,
   initialPerformanceData,
@@ -69,6 +71,10 @@ export function ReportsView({
   const [endDate, setEndDate] = useState(initialDates.end);
   const [financialData, setFinancialData] = useState<FinancialReportData>(initialFinancialData);
   const [isPending, startTransition] = useTransition();
+
+  // Table pagination states
+  const [rankingPage, setRankingPage] = useState(1);
+  const [stagnantPage, setStagnantPage] = useState(1);
 
   // Liquidation modal state
   const [selectedLiquidationSku, setSelectedLiquidationSku] = useState<StagnantSkuItem | null>(null);
@@ -111,6 +117,22 @@ export function ReportsView({
     e.preventDefault();
     fetchFinancials(startDate, endDate);
   };
+
+  // Ranking Pagination Logic
+  const rankingList = initialPerformanceData.productRanking;
+  const totalRankingPages = Math.max(1, Math.ceil(rankingList.length / ITEMS_PER_PAGE));
+  const paginatedRanking = useMemo(() => {
+    const start = (rankingPage - 1) * ITEMS_PER_PAGE;
+    return rankingList.slice(start, start + ITEMS_PER_PAGE);
+  }, [rankingList, rankingPage]);
+
+  // Stagnant Pagination Logic
+  const stagnantList = initialPerformanceData.stagnantSkus;
+  const totalStagnantPages = Math.max(1, Math.ceil(stagnantList.length / ITEMS_PER_PAGE));
+  const paginatedStagnant = useMemo(() => {
+    const start = (stagnantPage - 1) * ITEMS_PER_PAGE;
+    return stagnantList.slice(start, start + ITEMS_PER_PAGE);
+  }, [stagnantList, stagnantPage]);
 
   return (
     <div className="space-y-6">
@@ -434,10 +456,10 @@ export function ReportsView({
           </div>
 
           {/* Ranking Table */}
-          <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col">
             <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Ranking Completo de SKUs ({initialPerformanceData.productRanking.length} itens)
+                Ranking Completo de SKUs ({rankingList.length} itens)
               </span>
             </div>
 
@@ -456,14 +478,15 @@ export function ReportsView({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {initialPerformanceData.productRanking.length === 0 ? (
+                  {paginatedRanking.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="text-center py-8 text-muted-foreground">
                         Nenhum produto cadastrado no catálogo.
                       </td>
                     </tr>
                   ) : (
-                    initialPerformanceData.productRanking.map((item, idx) => {
+                    paginatedRanking.map((item, idx) => {
+                      const absoluteIndex = (rankingPage - 1) * ITEMS_PER_PAGE + idx + 1;
                       const getAbcBadge = (abc: "A" | "B" | "C") => {
                         if (abc === "A")
                           return (
@@ -490,7 +513,7 @@ export function ReportsView({
                           className="hover:bg-muted/40 transition-colors"
                         >
                           <td className="py-3 px-4 text-center font-bold text-xs text-muted-foreground">
-                            {idx + 1}
+                            {absoluteIndex}
                           </td>
                           <td className="py-3 px-4">
                             <span className="font-semibold text-foreground block">
@@ -532,6 +555,34 @@ export function ReportsView({
                   )}
                 </tbody>
               </table>
+            </div>
+
+            {/* Paginação Ranking */}
+            <div className="px-5 py-4 border-t border-border bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+              <span>
+                Exibindo <strong>{rankingList.length > 0 ? (rankingPage - 1) * ITEMS_PER_PAGE + 1 : 0}</strong> a{" "}
+                <strong>{Math.min(rankingPage * ITEMS_PER_PAGE, rankingList.length)}</strong> de{" "}
+                <strong>{rankingList.length}</strong> itens
+              </span>
+              <div className="flex items-center gap-2">
+                <span>Página <strong>{rankingPage}</strong> de <strong>{totalRankingPages}</strong></span>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setRankingPage((prev) => Math.max(1, prev - 1))}
+                    disabled={rankingPage === 1}
+                    className="px-3 py-1 border border-border rounded-lg text-xs hover:bg-muted disabled:opacity-40 transition-colors"
+                  >
+                    Anterior
+                  </button>
+                  <button
+                    onClick={() => setRankingPage((prev) => Math.min(totalRankingPages, prev + 1))}
+                    disabled={rankingPage === totalRankingPages}
+                    className="px-3 py-1 border border-border rounded-lg text-xs hover:bg-muted disabled:opacity-40 transition-colors"
+                  >
+                    Próximo
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -692,7 +743,7 @@ export function ReportsView({
           </div>
 
           {/* Stagnant SKU Table */}
-          <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col">
             <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Lista de Peças sem Vendas
@@ -715,7 +766,7 @@ export function ReportsView({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {initialPerformanceData.stagnantSkus.length === 0 ? (
+                  {paginatedStagnant.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="text-center py-8 text-muted-foreground">
                         <CheckCircle2 className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
@@ -723,7 +774,7 @@ export function ReportsView({
                       </td>
                     </tr>
                   ) : (
-                    initialPerformanceData.stagnantSkus.map((sku) => {
+                    paginatedStagnant.map((sku) => {
                       const getStatusBadge = (days: number) => {
                         if (days >= 90)
                           return (
@@ -796,6 +847,34 @@ export function ReportsView({
                   )}
                 </tbody>
               </table>
+            </div>
+
+            {/* Paginação Estoque Parado */}
+            <div className="px-5 py-4 border-t border-border bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
+              <span>
+                Exibindo <strong>{stagnantList.length > 0 ? (stagnantPage - 1) * ITEMS_PER_PAGE + 1 : 0}</strong> a{" "}
+                <strong>{Math.min(stagnantPage * ITEMS_PER_PAGE, stagnantList.length)}</strong> de{" "}
+                <strong>{stagnantList.length}</strong> itens
+              </span>
+              <div className="flex items-center gap-2">
+                <span>Página <strong>{stagnantPage}</strong> de <strong>{totalStagnantPages}</strong></span>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setStagnantPage((prev) => Math.max(1, prev - 1))}
+                    disabled={stagnantPage === 1}
+                    className="px-3 py-1 border border-border rounded-lg text-xs hover:bg-muted disabled:opacity-40 transition-colors"
+                  >
+                    Anterior
+                  </button>
+                  <button
+                    onClick={() => setStagnantPage((prev) => Math.min(totalStagnantPages, prev + 1))}
+                    disabled={stagnantPage === totalStagnantPages}
+                    className="px-3 py-1 border border-border rounded-lg text-xs hover:bg-muted disabled:opacity-40 transition-colors"
+                  >
+                    Próximo
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -23,6 +23,8 @@ interface SalesHistoryTableProps {
   availableSkus: SkuTableRow[];
 }
 
+const ITEMS_PER_PAGE = 10;
+
 const formatCurrency = (val: number) =>
   new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -44,6 +46,7 @@ export function SalesHistoryTable({
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedSale, setSelectedSale] = useState<SaleHistoryItem | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isNewSaleOpen, setIsNewSaleOpen] = useState(false);
@@ -61,6 +64,31 @@ export function SalesHistoryTable({
       return matchesSearch && matchesStatus && matchesPayment;
     });
   }, [sales, search, statusFilter, paymentFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSales.length / ITEMS_PER_PAGE));
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleStatusFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handlePaymentFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setPaymentFilter(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const paginatedSales = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredSales.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredSales, currentPage]);
+
+  const startIndex = filteredSales.length > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0;
+  const endIndex = Math.min(currentPage * ITEMS_PER_PAGE, filteredSales.length);
 
   // Metrics
   const metrics = useMemo(() => {
@@ -178,7 +206,7 @@ export function SalesHistoryTable({
             id="sale-search"
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={handleSearchChange}
             placeholder="Buscar por cliente ou ID da venda..."
             className="block w-full pl-10 pr-3 py-2.5 border border-border rounded-xl bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-sm transition-colors"
           />
@@ -189,7 +217,7 @@ export function SalesHistoryTable({
           <select
             id="status-filter"
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={handleStatusFilterChange}
             className="appearance-none pl-4 pr-10 py-2.5 border border-border rounded-xl bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-colors cursor-pointer"
           >
             <option value="">Todos os Status</option>
@@ -204,7 +232,7 @@ export function SalesHistoryTable({
           <select
             id="payment-filter"
             value={paymentFilter}
-            onChange={(e) => setPaymentFilter(e.target.value)}
+            onChange={handlePaymentFilterChange}
             className="appearance-none pl-4 pr-10 py-2.5 border border-border rounded-xl bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-colors cursor-pointer"
           >
             <option value="">Todas as Formas</option>
@@ -229,7 +257,7 @@ export function SalesHistoryTable({
       </div>
 
       {/* ── Data Table ──────────────────────────────────────────────── */}
-      <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col">
         {/* Table Header */}
         <div className="hidden md:grid grid-cols-[1fr_1.2fr_1fr_1fr_1fr_1fr_4rem] px-5 py-3 border-b border-border bg-muted/40 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           <div>ID Venda</div>
@@ -241,7 +269,7 @@ export function SalesHistoryTable({
           <div className="text-center">Ações</div>
         </div>
 
-        {filteredSales.length === 0 ? (
+        {paginatedSales.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
             <Receipt className="w-12 h-12 opacity-30" />
             <p className="text-sm font-medium">Nenhuma venda encontrada.</p>
@@ -253,7 +281,7 @@ export function SalesHistoryTable({
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {filteredSales.map((sale) => {
+            {paginatedSales.map((sale) => {
               const isPending = sale.status === "PENDENTE";
               return (
                 <div
@@ -323,16 +351,35 @@ export function SalesHistoryTable({
           </div>
         )}
 
-        {/* Rodapé */}
-        <div className="px-5 py-3 border-t border-border bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
+        {/* Rodapé / Paginação */}
+        <div className="px-5 py-4 border-t border-border bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
           <span>
-            Exibindo{" "}
-            <strong className="text-foreground">
-              {filteredSales.length}
-            </strong>{" "}
-            de <strong className="text-foreground">{sales.length}</strong>{" "}
-            venda{sales.length !== 1 ? "s" : ""}
+            Exibindo <strong className="text-foreground">{startIndex}</strong> a{" "}
+            <strong className="text-foreground">{endIndex}</strong> de{" "}
+            <strong className="text-foreground">{filteredSales.length}</strong>{" "}
+            venda{filteredSales.length !== 1 ? "s" : ""}
           </span>
+          <div className="flex items-center gap-2">
+            <span>
+              Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
+            </span>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 border border-border rounded-lg text-xs hover:bg-muted disabled:opacity-40 transition-colors"
+              >
+                Anterior
+              </button>
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 border border-border rounded-lg text-xs hover:bg-muted disabled:opacity-40 transition-colors"
+              >
+                Próximo
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
