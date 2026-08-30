@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { createProductWithSkus, updateProduct } from './product'
+import { createProductWithSkus, updateProduct, addSkuToProduct } from './product'
 
 // Mock do Prisma
 const mockProductCreate = vi.hoisted(() => vi.fn())
 const mockProductUpdate = vi.hoisted(() => vi.fn())
+const mockProductFindUnique = vi.hoisted(() => vi.fn())
 const mockSkuCreate = vi.hoisted(() => vi.fn())
 const mockStockMovementCreate = vi.hoisted(() => vi.fn())
 const mockTransaction = vi.hoisted(() => vi.fn())
@@ -14,6 +15,7 @@ vi.mock('../lib/prisma', () => ({
     product: {
       create: mockProductCreate,
       update: mockProductUpdate,
+      findUnique: mockProductFindUnique,
     },
     sku: { create: mockSkuCreate },
     stockMovement: { create: mockStockMovementCreate },
@@ -34,7 +36,7 @@ describe('createProductWithSkus', () => {
 
     mockTransaction.mockImplementation(async (cb) => {
       return cb({
-        product: { create: mockProductCreate, update: mockProductUpdate },
+        product: { create: mockProductCreate, update: mockProductUpdate, findUnique: mockProductFindUnique },
         sku: { create: mockSkuCreate },
         stockMovement: { create: mockStockMovementCreate },
       })
@@ -241,5 +243,91 @@ describe('updateProduct', () => {
         baseSalePrice: 20,
       })
     ).rejects.toThrow('ID do produto e nome são obrigatórios.')
+  })
+})
+
+describe('addSkuToProduct', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+
+    mockTransaction.mockImplementation(async (cb) => {
+      return cb({
+        product: { findUnique: mockProductFindUnique },
+        sku: { create: mockSkuCreate },
+        stockMovement: { create: mockStockMovementCreate },
+      })
+    })
+
+    mockProductFindUnique.mockResolvedValue({
+      id: 'prod-1',
+      name: 'Vestido',
+      baseCostPrice: 1500,
+    })
+
+    mockSkuCreate.mockImplementation(async (args: any) => ({
+      id: 'sku-new-1',
+      ...args.data,
+    }))
+
+    mockStockMovementCreate.mockResolvedValue({ id: 'mov-1' })
+  })
+
+  it('deve adicionar um novo SKU a um produto existente', async () => {
+    const sku = await addSkuToProduct({
+      productId: 'prod-1',
+      sku: 'VES-VERMELHO-G',
+      color: 'Vermelho',
+      size: 'G',
+      currentStock: 5,
+      minimumStock: 2,
+    })
+
+    expect(mockProductFindUnique).toHaveBeenCalledWith({ where: { id: 'prod-1' } })
+    expect(mockSkuCreate).toHaveBeenCalledWith({
+      data: {
+        productId: 'prod-1',
+        sku: 'VES-VERMELHO-G',
+        color: 'Vermelho',
+        size: 'G',
+        currentStock: 5,
+        minimumStock: 2,
+      },
+    })
+    expect(mockStockMovementCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        type: 'ENTRADA',
+        quantity: 5,
+        unitValue: 1500,
+      }),
+    })
+    expect(sku.sku).toBe('VES-VERMELHO-G')
+  })
+
+  it('deve lançar erro se os campos obrigatórios estiverem ausentes', async () => {
+    await expect(
+      addSkuToProduct({
+        productId: '',
+        sku: 'VES-VERMELHO-G',
+        color: 'Vermelho',
+        size: 'G',
+        currentStock: 5,
+        minimumStock: 2,
+      })
+    ).rejects.toThrow('Produto, SKU, cor e tamanho são obrigatórios.')
+  })
+
+  it('deve lançar erro se o produto não for encontrado', async () => {
+    mockProductFindUnique.mockResolvedValue(null)
+
+    await expect(
+      addSkuToProduct({
+        productId: 'prod-99',
+        sku: 'VES-VERMELHO-G',
+        color: 'Vermelho',
+        size: 'G',
+        currentStock: 5,
+        minimumStock: 2,
+      })
+    ).rejects.toThrow('Produto não encontrado.')
   })
 })

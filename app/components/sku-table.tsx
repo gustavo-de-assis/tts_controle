@@ -67,12 +67,7 @@ export function SkuTable({ data }: { data: SkuTableRow[] }) {
             onChange={handleSearchChange}
           />
         </div>
-        <div className="flex items-center gap-2">
-          <button className="inline-flex items-center gap-2 px-3 py-2 border border-border rounded-md text-sm font-medium text-foreground bg-card hover:bg-muted transition-colors">
-            <Filter className="h-4 w-4" />
-            Filtros
-          </button>
-        </div>
+
       </div>
 
       {/* Table Content */}
@@ -133,7 +128,7 @@ export function SkuTable({ data }: { data: SkuTableRow[] }) {
           </tbody>
         </table>
       </div>
-      
+
       {/* Table Footer / Pagination */}
       <div className="p-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground bg-muted/20">
         <span>

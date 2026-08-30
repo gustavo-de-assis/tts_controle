@@ -13,12 +13,14 @@ import {
   DollarSign,
   Layers,
   Pencil,
+  PlusCircle,
   PackagePlus,
 } from "lucide-react";
 import { StatusEstoque } from "../../src/domain/stock";
 import type { ProductCatalogItem } from "../../src/actions/product";
 import { ProductModal } from "./product-modal";
 import { ProductParentEditModal } from "./product-parent-edit-modal";
+import { AddSkuModal } from "./add-sku-modal";
 import { StockEntryModal } from "./stock-entry-modal";
 import type { SkuTableRow } from "./sku-table";
 
@@ -47,6 +49,7 @@ export function ProductCatalogTable({
   // Modais
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductCatalogItem | null>(null);
+  const [addSkuProduct, setAddSkuProduct] = useState<ProductCatalogItem | null>(null);
   const [stockEntrySku, setStockEntrySku] = useState<SkuTableRow | null>(null);
 
   const filtered = useMemo(() => {
@@ -146,7 +149,7 @@ export function ProductCatalogTable({
       {/* ── Tabela / Accordion ──────────────────────────────────────── */}
       <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col">
         {/* Cabeçalho da Tabela */}
-        <div className="hidden md:grid grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_4rem] px-5 py-3 border-b border-border bg-muted/40 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <div className="hidden md:grid grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_5rem] px-5 py-3 border-b border-border bg-muted/40 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           <div />
           <div className="flex items-center gap-1.5">
             <Package className="w-3.5 h-3.5" /> Produto
@@ -187,7 +190,7 @@ export function ProductCatalogTable({
               return (
                 <div key={product.id}>
                   {/* ── Linha do Produto Pai ─────────────────────── */}
-                  <div className="grid grid-cols-[2.5rem_1fr] md:grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_4rem] items-center px-5 py-4 hover:bg-muted/30 transition-colors text-left group">
+                  <div className="grid grid-cols-[2.5rem_1fr] md:grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_5rem] items-center px-5 py-4 hover:bg-muted/30 transition-colors text-left group">
                     {/* Botão de Expansão */}
                     <button
                       type="button"
@@ -250,8 +253,19 @@ export function ProductCatalogTable({
                       </span>
                     </div>
 
-                    {/* Botão de Edição do Produto Pai */}
-                    <div className="hidden md:flex justify-center">
+                    {/* Botões de Ação do Produto Pai (Adicionar SKU + Editar Produto) */}
+                    <div className="hidden md:flex items-center justify-center gap-1">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAddSkuProduct(product);
+                        }}
+                        title={`Adicionar SKU ao produto ${product.name}`}
+                        className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent/10 hover:text-accent transition-colors"
+                      >
+                        <PlusCircle className="w-4 h-4" />
+                      </button>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -270,7 +284,7 @@ export function ProductCatalogTable({
                   {isExpanded && (
                     <div className="bg-muted/20 border-t border-border/50">
                       {/* Sub-cabeçalho das variações */}
-                      <div className="hidden md:grid grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_1fr_4rem] px-5 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/50">
+                      <div className="hidden md:grid grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_1fr_5rem] px-5 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/50">
                         <div />
                         <div>Código SKU</div>
                         <div>Cor</div>
@@ -292,7 +306,7 @@ export function ProductCatalogTable({
                           return (
                             <div
                               key={sku.id}
-                              className="grid grid-cols-[2.5rem_1fr] md:grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_1fr_4rem] items-center px-5 py-3 border-b border-border/30 last:border-b-0 hover:bg-muted/20 transition-colors"
+                              className="grid grid-cols-[2.5rem_1fr] md:grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_1fr_5rem] items-center px-5 py-3 border-b border-border/30 last:border-b-0 hover:bg-muted/20 transition-colors"
                             >
                               {/* Ícone sub-nível */}
                               <div className="flex items-center justify-center">
@@ -442,6 +456,12 @@ export function ProductCatalogTable({
         product={editingProduct}
         categories={categories}
         onClose={() => setEditingProduct(null)}
+      />
+
+      <AddSkuModal
+        isOpen={addSkuProduct !== null}
+        product={addSkuProduct}
+        onClose={() => setAddSkuProduct(null)}
       />
 
       <StockEntryModal

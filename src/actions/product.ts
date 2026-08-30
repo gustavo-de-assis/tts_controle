@@ -220,3 +220,55 @@ export async function updateProductWithSku(data: UpdateProductWithSkuInput) {
     return { product, sku };
   });
 }
+
+export interface AddSkuToProductInput {
+  productId: string;
+  sku: string;
+  color: string;
+  size: string;
+  currentStock: number;
+  minimumStock: number;
+}
+
+export async function addSkuToProduct(data: AddSkuToProductInput) {
+  await requireUser();
+  if (!data.productId || !data.sku.trim() || !data.color.trim() || !data.size.trim()) {
+    throw new Error("Produto, SKU, cor e tamanho são obrigatórios.");
+  }
+
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const product = await tx.product.findUnique({
+      where: { id: data.productId },
+    });
+    if (!product) {
+      throw new Error("Produto não encontrado.");
+    }
+
+    const sku = await tx.sku.create({
+      data: {
+        productId: data.productId,
+        sku: data.sku.trim(),
+        color: data.color.trim(),
+        size: data.size.trim(),
+        currentStock: data.currentStock,
+        minimumStock: data.minimumStock,
+      },
+    });
+
+    if (sku.currentStock > 0) {
+      await tx.stockMovement.create({
+        data: {
+          skuId: sku.id,
+          type: "ENTRADA",
+          quantity: sku.currentStock,
+          unitValue: product.baseCostPrice,
+          observation: "Estoque Inicial via Adição de SKU",
+        },
+      });
+    }
+
+    revalidatePath("/");
+    revalidatePath("/produtos");
+    return sku;
+  });
+}
