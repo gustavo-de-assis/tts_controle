@@ -3,6 +3,7 @@ import { Package } from "lucide-react";
 import { getProductsWithSkus } from "../../src/actions/product";
 import { prisma } from "../../src/lib/prisma";
 import { ProductCatalogTable } from "../components/product-catalog-table";
+import { TopHeader } from "../components/top-header";
 
 export const metadata = {
   title: "Produtos & Catálogo — StockApp",
@@ -21,27 +22,22 @@ export default async function ProdutosPage() {
 
   return (
     <>
-      {/* ── Header ─────────────────────────────────────────────── */}
-      <header className="bg-card border-b border-border h-16 flex items-center px-8 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-accent/10 rounded-lg text-accent">
-            <Package className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-foreground leading-tight">
-              Produtos & Catálogo
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              {products.length} produto{products.length !== 1 ? "s" : ""}{" "}
-              cadastrado{products.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-        </div>
-      </header>
+      <TopHeader />
 
       {/* ── Main Content ────────────────────────────────────────── */}
       <main className="flex-1 p-8 overflow-y-auto bg-background">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
+                Produtos & Catálogo
+              </h1>
+              <p className="text-muted-foreground mt-1 text-sm">
+                Gerencie seus produtos, categorias e variações de SKU ({products.length} produtos cadastrados).
+              </p>
+            </div>
+          </div>
+
           <ProductCatalogTable products={products} categories={categories} />
         </div>
       </main>
