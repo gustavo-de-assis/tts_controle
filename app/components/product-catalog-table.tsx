@@ -148,236 +148,153 @@ export function ProductCatalogTable({
 
       {/* ── Tabela / Accordion ──────────────────────────────────────── */}
       <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col">
-        {/* Cabeçalho da Tabela */}
-        <div className="hidden md:grid grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_5rem] px-5 py-3 border-b border-border bg-muted/40 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          <div />
-          <div className="flex items-center gap-1.5">
-            <Package className="w-3.5 h-3.5" /> Produto
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Tag className="w-3.5 h-3.5" /> Categoria
-          </div>
-          <div className="flex items-center gap-1.5 justify-end">
-            <DollarSign className="w-3.5 h-3.5" /> Custo Base
-          </div>
-          <div className="flex items-center gap-1.5 justify-end">
-            <DollarSign className="w-3.5 h-3.5" /> Venda Base
-          </div>
-          <div className="flex items-center gap-1.5 justify-end">
-            <Layers className="w-3.5 h-3.5" /> Total Estoque
-          </div>
-          <div className="text-center">Ações</div>
-        </div>
-
-        {paginatedProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
-            <Package className="w-12 h-12 opacity-30" />
-            <p className="text-sm font-medium">Nenhum produto encontrado.</p>
-            {search && (
-              <p className="text-xs opacity-70">
-                Tente ajustar a busca ou o filtro de categoria.
-              </p>
-            )}
-          </div>
-        ) : (
-          <div className="divide-y divide-border">
-            {paginatedProducts.map((product) => {
+        {/* ── Mobile Stacked Accordion Cards View (block md:hidden) ── */}
+        <div className="block md:hidden p-3 space-y-3 bg-muted/10">
+          {paginatedProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-3">
+              <Package className="w-10 h-10 opacity-30" />
+              <p className="text-sm font-medium">Nenhum produto encontrado.</p>
+              {search && (
+                <p className="text-xs opacity-70 text-center">
+                  Tente ajustar a busca ou o filtro de categoria.
+                </p>
+              )}
+            </div>
+          ) : (
+            paginatedProducts.map((product) => {
               const isExpanded = expandedIds.has(product.id);
               const hasCritical = product.skus.some(
                 (s) => s.status === StatusEstoque.ESTOQUE_CRITICO
               );
 
               return (
-                <div key={product.id}>
-                  {/* ── Linha do Produto Pai ─────────────────────── */}
-                  <div className="grid grid-cols-[2.5rem_1fr] md:grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_5rem] items-center px-5 py-4 hover:bg-muted/30 transition-colors text-left group">
-                    {/* Botão de Expansão */}
-                    <button
-                      type="button"
-                      onClick={() => toggleExpand(product.id)}
-                      aria-expanded={isExpanded}
-                      aria-label={`${isExpanded ? "Recolher" : "Expandir"} variações de ${product.name}`}
-                      className="flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors"
-                    >
-                      {isExpanded ? (
-                        <ChevronDown className="w-4 h-4" />
-                      ) : (
-                        <ChevronRight className="w-4 h-4" />
-                      )}
-                    </button>
+                <div
+                  key={product.id}
+                  data-testid="product-card-mobile"
+                  className="bg-card border border-border rounded-xl shadow-xs overflow-hidden"
+                >
+                  {/* Product Card Header */}
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="px-2 py-0.5 bg-muted rounded-full text-[11px] font-medium text-muted-foreground">
+                            {product.categoryName}
+                          </span>
+                          {hasCritical && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-medium bg-danger/10 text-danger border border-danger/20">
+                              <AlertTriangle className="w-3 h-3" />
+                              Crítico
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="text-base font-semibold text-foreground leading-snug">
+                          {product.name}
+                        </h3>
+                      </div>
 
-                    {/* Nome + badge crítico */}
-                    <div
-                      onClick={() => toggleExpand(product.id)}
-                      className="flex items-center gap-2 min-w-0 cursor-pointer"
-                    >
-                      <span className="font-semibold text-foreground truncate">
-                        {product.name}
-                      </span>
-                      {hasCritical && (
-                        <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium bg-danger/10 text-danger border border-danger/20 shrink-0">
-                          <AlertTriangle className="w-3 h-3" />
-                          Alerta
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Categoria */}
-                    <div className="hidden md:block text-sm text-muted-foreground">
-                      <span className="px-2 py-0.5 bg-muted rounded-full text-xs font-medium">
-                        {product.categoryName}
-                      </span>
-                    </div>
-
-                    {/* Custo Base */}
-                    <div className="hidden md:block text-sm text-right font-mono text-muted-foreground">
-                      {formatCurrency(product.baseCostPrice)}
-                    </div>
-
-                    {/* Venda Base */}
-                    <div className="hidden md:block text-sm text-right font-mono font-medium text-foreground">
-                      {formatCurrency(product.baseSalePrice)}
-                    </div>
-
-                    {/* Total Estoque */}
-                    <div className="hidden md:block text-sm text-right">
-                      <span
-                        className={`font-bold ${
-                          hasCritical ? "text-danger" : "text-success"
-                        }`}
-                      >
-                        {product.totalStock}
-                      </span>
-                      <span className="text-xs text-muted-foreground ml-1">
-                        un.
-                      </span>
-                    </div>
-
-                    {/* Botões de Ação do Produto Pai (Adicionar SKU + Editar Produto) */}
-                    <div className="hidden md:flex items-center justify-center gap-1">
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setAddSkuProduct(product);
-                        }}
-                        title={`Adicionar SKU ao produto ${product.name}`}
-                        className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent/10 hover:text-accent transition-colors"
+                        data-testid="product-card-toggle-mobile"
+                        onClick={() => toggleExpand(product.id)}
+                        aria-expanded={isExpanded}
+                        aria-label={`${isExpanded ? "Recolher" : "Expandir"} variações de ${product.name}`}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
                       >
-                        <PlusCircle className="w-4 h-4" />
+                        {isExpanded ? (
+                          <ChevronDown className="w-5 h-5" />
+                        ) : (
+                          <ChevronRight className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Preço e Total em Estoque */}
+                    <div className="flex items-center justify-between pt-1 border-t border-border/60 text-xs">
+                      <div>
+                        <span className="text-muted-foreground block text-[11px]">Preço</span>
+                        <span className="font-mono font-bold text-sm text-foreground">
+                          {formatCurrency(product.baseSalePrice)}
+                        </span>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-muted-foreground block text-[11px]">Total em Estoque</span>
+                        <span
+                          className={`font-bold text-sm ${
+                            hasCritical ? "text-danger" : "text-success"
+                          }`}
+                        >
+                          {product.totalStock} un.
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Ações Rápidas Mobile */}
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/40">
+                      <button
+                        type="button"
+                        onClick={() => setAddSkuProduct(product)}
+                        className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-accent p-1.5 rounded-lg hover:bg-accent/10 transition-colors"
+                      >
+                        <PlusCircle className="w-3.5 h-3.5" />
+                        <span>Novo SKU</span>
                       </button>
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingProduct(product);
-                        }}
-                        title={`Editar produto ${product.name}`}
-                        className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                        onClick={() => setEditingProduct(product)}
+                        className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors"
                       >
-                        <Pencil className="w-4 h-4" />
+                        <Pencil className="w-3.5 h-3.5" />
+                        <span>Editar</span>
                       </button>
                     </div>
                   </div>
 
-                  {/* ── Variações de SKU (Accordion) ─────────────── */}
+                  {/* Sub-cards de variações de SKU (Accordion) */}
                   {isExpanded && (
-                    <div className="bg-muted/20 border-t border-border/50">
-                      {/* Sub-cabeçalho das variações */}
-                      <div className="hidden md:grid grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_1fr_5rem] px-5 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/50">
-                        <div />
-                        <div>Código SKU</div>
-                        <div>Cor</div>
-                        <div>Tamanho</div>
-                        <div className="text-right">Qtde</div>
-                        <div className="text-right">Mín.</div>
-                        <div className="text-center">Status</div>
-                        <div className="text-center">Ações</div>
+                    <div className="bg-muted/20 border-t border-border/60 p-3 space-y-2">
+                      <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                        Variações de SKU ({product.skus.length})
                       </div>
-
                       {product.skus.length === 0 ? (
-                        <p className="px-8 py-4 text-sm text-muted-foreground italic">
-                          Nenhuma variação ativa cadastrada.
+                        <p className="text-xs text-muted-foreground italic py-2">
+                          Nenhuma variação cadastrada.
                         </p>
                       ) : (
                         product.skus.map((sku) => {
-                          const isCritical =
-                            sku.status === StatusEstoque.ESTOQUE_CRITICO;
+                          const isCritical = sku.status === StatusEstoque.ESTOQUE_CRITICO;
                           return (
                             <div
                               key={sku.id}
-                              className="grid grid-cols-[2.5rem_1fr] md:grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_1fr_5rem] items-center px-5 py-3 border-b border-border/30 last:border-b-0 hover:bg-muted/20 transition-colors"
+                              className="p-3 bg-card border border-border/80 rounded-xl space-y-2 shadow-2xs"
                             >
-                              {/* Ícone sub-nível */}
-                              <div className="flex items-center justify-center">
-                                <div className="w-2 h-2 rounded-full bg-border" />
-                              </div>
-
-                              {/* Código SKU */}
-                              <div className="font-mono text-xs font-semibold text-foreground tracking-wider">
-                                {sku.sku}
-                                {/* Mobile: exibe info compacta */}
-                                <div className="md:hidden text-muted-foreground font-sans font-normal mt-0.5">
-                                  {sku.color} · {sku.size} · Qtde:{" "}
-                                  <span
-                                    className={
-                                      isCritical
-                                        ? "text-danger font-bold"
-                                        : "text-success font-bold"
-                                    }
-                                  >
-                                    {sku.currentStock}
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <span className="font-mono text-xs font-bold text-foreground block tracking-wider">
+                                    {sku.sku}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {sku.color} · {sku.size}
                                   </span>
                                 </div>
-                              </div>
 
-                              {/* Cor */}
-                              <div className="hidden md:block text-sm text-muted-foreground">
-                                {sku.color}
-                              </div>
-
-                              {/* Tamanho */}
-                              <div className="hidden md:block">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-xs font-bold text-foreground">
-                                  {sku.size}
-                                </span>
-                              </div>
-
-                              {/* Qtde (Quantidade) */}
-                              <div className="hidden md:block text-right">
-                                <span
-                                  className={`font-bold text-sm ${
-                                    isCritical
-                                      ? "text-danger"
-                                      : "text-foreground"
-                                  }`}
-                                >
-                                  {sku.currentStock}
-                                </span>
-                              </div>
-
-                              {/* Estoque Mínimo */}
-                              <div className="hidden md:block text-right text-sm text-muted-foreground">
-                                {sku.minimumStock}
-                              </div>
-
-                              {/* Status Badge */}
-                              <div className="hidden md:flex justify-center">
                                 {isCritical ? (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-danger/10 text-danger border border-danger/20">
-                                    <AlertTriangle className="w-3 h-3" />
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-danger/10 text-danger border border-danger/20 shrink-0">
                                     Estoque Crítico
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success border border-success/20">
-                                    <CheckCircle2 className="w-3 h-3" />
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-success/10 text-success border border-success/20 shrink-0">
                                     Normal
                                   </span>
                                 )}
                               </div>
 
-                              {/* Botão de Ação para Entrada de Estoque no SKU */}
-                              <div className="hidden md:flex justify-center">
+                              <div className="flex items-center justify-between pt-1 border-t border-border/40 text-xs">
+                                <span className="text-muted-foreground">
+                                  Estoque: <strong className={isCritical ? "text-danger" : "text-foreground"}>{sku.currentStock}</strong> / Mín: {sku.minimumStock}
+                                </span>
+
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -394,10 +311,10 @@ export function ProductCatalogTable({
                                       baseSalePrice: product.baseSalePrice,
                                     })
                                   }
-                                  title={`Dar entrada de estoque em ${sku.sku}`}
-                                  className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent/10 hover:text-accent transition-colors"
+                                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-accent hover:text-accent/80 p-1 rounded transition-colors"
                                 >
-                                  <PackagePlus className="w-4 h-4" />
+                                  <PackagePlus className="w-3.5 h-3.5" />
+                                  <span>Entrada</span>
                                 </button>
                               </div>
                             </div>
@@ -408,9 +325,263 @@ export function ProductCatalogTable({
                   )}
                 </div>
               );
-            })}
+            })
+          )}
+        </div>
+
+        {/* ── Desktop Table View (hidden md:block) ─────────────────────── */}
+        <div className="hidden md:block">
+          {/* Cabeçalho da Tabela */}
+          <div className="grid grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_5rem] px-5 py-3 border-b border-border bg-muted/40 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <div />
+            <div className="flex items-center gap-1.5">
+              <Package className="w-3.5 h-3.5" /> Produto
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Tag className="w-3.5 h-3.5" /> Categoria
+            </div>
+            <div className="flex items-center gap-1.5 justify-end">
+              <DollarSign className="w-3.5 h-3.5" /> Custo Base
+            </div>
+            <div className="flex items-center gap-1.5 justify-end">
+              <DollarSign className="w-3.5 h-3.5" /> Venda Base
+            </div>
+            <div className="flex items-center gap-1.5 justify-end">
+              <Layers className="w-3.5 h-3.5" /> Total Estoque
+            </div>
+            <div className="text-center">Ações</div>
           </div>
-        )}
+
+          {paginatedProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
+              <Package className="w-12 h-12 opacity-30" />
+              <p className="text-sm font-medium">Nenhum produto encontrado.</p>
+              {search && (
+                <p className="text-xs opacity-70">
+                  Tente ajustar a busca ou o filtro de categoria.
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {paginatedProducts.map((product) => {
+                const isExpanded = expandedIds.has(product.id);
+                const hasCritical = product.skus.some(
+                  (s) => s.status === StatusEstoque.ESTOQUE_CRITICO
+                );
+
+                return (
+                  <div key={product.id}>
+                    {/* ── Linha do Produto Pai ─────────────────────── */}
+                    <div className="grid grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_5rem] items-center px-5 py-4 hover:bg-muted/30 transition-colors text-left group">
+                      {/* Botão de Expansão */}
+                      <button
+                        type="button"
+                        onClick={() => toggleExpand(product.id)}
+                        aria-expanded={isExpanded}
+                        aria-label={`${isExpanded ? "Recolher" : "Expandir"} variações de ${product.name}`}
+                        className="flex items-center justify-center text-muted-foreground group-hover:text-foreground transition-colors"
+                      >
+                        {isExpanded ? (
+                          <ChevronDown className="w-4 h-4" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4" />
+                        )}
+                      </button>
+
+                      {/* Nome + badge crítico */}
+                      <div
+                        onClick={() => toggleExpand(product.id)}
+                        className="flex items-center gap-2 min-w-0 cursor-pointer"
+                      >
+                        <span className="font-semibold text-foreground truncate">
+                          {product.name}
+                        </span>
+                        {hasCritical && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium bg-danger/10 text-danger border border-danger/20 shrink-0">
+                            <AlertTriangle className="w-3 h-3" />
+                            Alerta
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Categoria */}
+                      <div className="text-sm text-muted-foreground">
+                        <span className="px-2 py-0.5 bg-muted rounded-full text-xs font-medium">
+                          {product.categoryName}
+                        </span>
+                      </div>
+
+                      {/* Custo Base */}
+                      <div className="text-sm text-right font-mono text-muted-foreground">
+                        {formatCurrency(product.baseCostPrice)}
+                      </div>
+
+                      {/* Venda Base */}
+                      <div className="text-sm text-right font-mono font-medium text-foreground">
+                        {formatCurrency(product.baseSalePrice)}
+                      </div>
+
+                      {/* Total Estoque */}
+                      <div className="text-sm text-right">
+                        <span
+                          className={`font-bold ${
+                            hasCritical ? "text-danger" : "text-success"
+                          }`}
+                        >
+                          {product.totalStock}
+                        </span>
+                        <span className="text-xs text-muted-foreground ml-1">
+                          un.
+                        </span>
+                      </div>
+
+                      {/* Botões de Ação do Produto Pai (Adicionar SKU + Editar Produto) */}
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAddSkuProduct(product);
+                          }}
+                          title={`Adicionar SKU ao produto ${product.name}`}
+                          className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent/10 hover:text-accent transition-colors"
+                        >
+                          <PlusCircle className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingProduct(product);
+                          }}
+                          title={`Editar produto ${product.name}`}
+                          className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* ── Variações de SKU (Accordion) ─────────────── */}
+                    {isExpanded && (
+                      <div className="bg-muted/20 border-t border-border/50">
+                        {/* Sub-cabeçalho das variações */}
+                        <div className="grid grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_1fr_5rem] px-5 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/50">
+                          <div />
+                          <div>Código SKU</div>
+                          <div>Cor</div>
+                          <div>Tamanho</div>
+                          <div className="text-right">Qtde</div>
+                          <div className="text-right">Mín.</div>
+                          <div className="text-center">Status</div>
+                          <div className="text-center">Ações</div>
+                        </div>
+
+                        {product.skus.length === 0 ? (
+                          <p className="px-8 py-4 text-sm text-muted-foreground italic">
+                            Nenhuma variação ativa cadastrada.
+                          </p>
+                        ) : (
+                          product.skus.map((sku) => {
+                            const isCritical =
+                              sku.status === StatusEstoque.ESTOQUE_CRITICO;
+                            return (
+                              <div
+                                key={sku.id}
+                                className="grid grid-cols-[2.5rem_1.5fr_1fr_1fr_1fr_1fr_1fr_5rem] items-center px-5 py-3 border-b border-border/30 last:border-b-0 hover:bg-muted/20 transition-colors"
+                              >
+                                {/* Ícone sub-nível */}
+                                <div className="flex items-center justify-center">
+                                  <div className="w-2 h-2 rounded-full bg-border" />
+                                </div>
+
+                                {/* Código SKU */}
+                                <div className="font-mono text-xs font-semibold text-foreground tracking-wider">
+                                  {sku.sku}
+                                </div>
+
+                                {/* Cor */}
+                                <div className="text-sm text-muted-foreground">
+                                  {sku.color}
+                                </div>
+
+                                {/* Tamanho */}
+                                <div>
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-xs font-bold text-foreground">
+                                    {sku.size}
+                                  </span>
+                                </div>
+
+                                {/* Qtde (Quantidade) */}
+                                <div className="text-right">
+                                  <span
+                                    className={`font-bold text-sm ${
+                                      isCritical
+                                        ? "text-danger"
+                                        : "text-foreground"
+                                    }`}
+                                  >
+                                    {sku.currentStock}
+                                  </span>
+                                </div>
+
+                                {/* Estoque Mínimo */}
+                                <div className="text-right text-sm text-muted-foreground">
+                                  {sku.minimumStock}
+                                </div>
+
+                                {/* Status Badge */}
+                                <div className="flex justify-center">
+                                  {isCritical ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-danger/10 text-danger border border-danger/20">
+                                      <AlertTriangle className="w-3 h-3" />
+                                      Estoque Crítico
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success border border-success/20">
+                                      <CheckCircle2 className="w-3 h-3" />
+                                      Normal
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Botão de Ação para Entrada de Estoque no SKU */}
+                                <div className="flex justify-center">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setStockEntrySku({
+                                        id: sku.id,
+                                        sku: sku.sku,
+                                        productName: product.name,
+                                        color: sku.color,
+                                        size: sku.size,
+                                        currentStock: sku.currentStock,
+                                        minimumStock: sku.minimumStock,
+                                        status: sku.status,
+                                        baseCostPrice: product.baseCostPrice,
+                                        baseSalePrice: product.baseSalePrice,
+                                      })
+                                    }
+                                    title={`Dar entrada de estoque em ${sku.sku}`}
+                                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent/10 hover:text-accent transition-colors"
+                                  >
+                                    <PackagePlus className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* Rodapé / Paginação */}
         <div className="px-5 py-4 border-t border-border bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
@@ -443,6 +614,18 @@ export function ProductCatalogTable({
           </div>
         </div>
       </div>
+
+      {/* ── Floating Action Button (FAB) Mobile ─────────────────────── */}
+      <button
+        type="button"
+        data-testid="fab-novo-produto"
+        onClick={() => setIsProductModalOpen(true)}
+        className="fixed bottom-20 right-4 z-40 rounded-full w-14 h-14 bg-orange-500 hover:bg-orange-600 text-white shadow-lg flex items-center justify-center md:hidden transition-all active:scale-95 shadow-orange-500/30"
+        aria-label="Novo Produto"
+        title="Novo Produto"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
 
       {/* ── Modais ─────────────────────────────────────────────────── */}
       <ProductModal
