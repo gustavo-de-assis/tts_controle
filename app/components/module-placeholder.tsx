@@ -6,7 +6,7 @@ interface ModulePlaceholderProps {
 
 export function ModulePlaceholder({ title }: ModulePlaceholderProps) {
   return (
-    <main className="flex-1 overflow-y-auto bg-background p-4 md:p-8 pb-20 md:pb-6">
+    <main className="flex-1 overflow-y-auto bg-background p-4 md:p-8 pb-24 md:pb-6">
       <div className="mx-auto flex min-h-[70vh] max-w-4xl items-center justify-center">
         <section className="w-full max-w-lg rounded-xl border border-border bg-card p-10 text-center shadow-sm">
           <Construction className="mx-auto mb-4 h-10 w-10 text-primary" />

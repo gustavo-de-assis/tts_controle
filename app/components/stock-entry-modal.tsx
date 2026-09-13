@@ -37,16 +37,16 @@ export function StockEntryModal({ isOpen, sku, onClose }: StockEntryModalProps) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
-      <form onSubmit={handleSubmit} className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl">
-        <div className="mb-6 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 pb-20 md:p-6 backdrop-blur-sm">
+      <form onSubmit={handleSubmit} className="w-full max-w-md rounded-2xl border border-slate-800 bg-[#131b2e] p-6 shadow-2xl mb-16 md:mb-0 max-h-[85vh] overflow-y-auto">
+        <div className="sticky top-0 bg-[#131b2e] z-10 mb-6 flex items-center justify-between border-b border-slate-800 pb-3">
           <div>
             <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
               <PackagePlus className="h-5 w-5 text-primary" /> Dar Entrada
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">{sku.productName} · {sku.sku}</p>
           </div>
-          <button type="button" onClick={onClose} className="rounded-full p-1.5 text-muted-foreground hover:bg-muted">
+          <button type="button" onClick={onClose} className="rounded-full p-1.5 text-muted-foreground hover:bg-slate-800 hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -65,9 +65,11 @@ export function StockEntryModal({ isOpen, sku, onClose }: StockEntryModalProps) 
           {error && <p className="rounded-lg bg-red-500/10 p-3 text-sm text-red-500">{error}</p>}
         </div>
 
-        <button type="submit" disabled={loading} className="mt-6 w-full rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
-          {loading ? "Registrando..." : "Confirmar entrada"}
-        </button>
+        <div className="sticky bottom-0 bg-[#131b2e] z-10 mt-6 pt-3 border-t border-slate-800">
+          <button type="submit" disabled={loading} className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-all shadow-md">
+            {loading ? "Registrando..." : "Confirmar entrada"}
+          </button>
+        </div>
       </form>
     </div>
   );

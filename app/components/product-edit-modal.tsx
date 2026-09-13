@@ -51,11 +51,11 @@ export function ProductEditModal({ isOpen, sku, onClose }: ProductEditModalProps
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm">
-      <form onSubmit={handleSubmit} className="w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-2xl">
-        <div className="mb-6 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 pb-20 md:p-6 backdrop-blur-sm">
+      <form onSubmit={handleSubmit} className="w-full max-w-lg rounded-2xl border border-slate-800 bg-[#131b2e] p-6 shadow-2xl mb-16 md:mb-0 max-h-[85vh] overflow-y-auto">
+        <div className="sticky top-0 bg-[#131b2e] z-10 mb-6 flex items-center justify-between border-b border-slate-800 pb-3">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground"><Pencil className="h-5 w-5 text-primary" /> Editar produto</h2>
-          <button type="button" onClick={onClose} aria-label="Fechar edição" className="rounded-full p-1.5 text-muted-foreground hover:bg-muted"><X className="h-5 w-5" /></button>
+          <button type="button" onClick={onClose} aria-label="Fechar edição" className="rounded-full p-1.5 text-muted-foreground hover:bg-slate-800 hover:text-foreground"><X className="h-5 w-5" /></button>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -69,7 +69,7 @@ export function ProductEditModal({ isOpen, sku, onClose }: ProductEditModalProps
         </div>
 
         {error && <p className="mt-4 rounded-lg bg-red-500/10 p-3 text-sm text-red-500">{error}</p>}
-        <div className="mt-6 flex justify-end gap-3">
+        <div className="sticky bottom-0 bg-[#131b2e] z-10 mt-6 flex justify-end gap-3 pt-3 border-t border-slate-800">
           <button type="button" onClick={onClose} className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-muted">Cancelar</button>
           <button type="submit" disabled={loading} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">{loading ? "Salvando..." : "Salvar alterações"}</button>
         </div>

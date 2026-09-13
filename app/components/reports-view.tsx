@@ -87,6 +87,49 @@ export function ReportsView({
     }).format(value);
   };
 
+  const getAbcBadge = (abc: "A" | "B" | "C") => {
+    if (abc === "A")
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+          Classe A
+        </span>
+      );
+    if (abc === "B")
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+          Classe B
+        </span>
+      );
+    return (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-500/15 text-slate-700 dark:text-slate-400 border border-slate-500/20">
+        Classe C
+      </span>
+    );
+  };
+
+  const getStagnantStatusBadge = (days: number) => {
+    if (days >= 90)
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30">
+          <AlertTriangle className="w-3 h-3" />
+          &gt; 90 dias (Crítico)
+        </span>
+      );
+    if (days >= 60)
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-500/15 text-orange-700 dark:text-orange-400 border border-orange-500/30">
+          <Clock className="w-3 h-3" />
+          &gt; 60 dias (Alerta)
+        </span>
+      );
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+        <Clock className="w-3 h-3" />
+        &gt; 30 dias (Atenção)
+      </span>
+    );
+  };
+
   // Handle Preset Change
   const handlePresetChange = (preset: PeriodPreset) => {
     setPeriodPreset(preset);
@@ -138,7 +181,7 @@ export function ReportsView({
     <div className="space-y-6">
       {/* ── Top Header Bar & Period Filter ──────────────────────────────────── */}
       <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2.5">
               <Sparkles className="w-6 h-6 text-accent" />
@@ -150,7 +193,7 @@ export function ReportsView({
           </div>
 
           {/* Preset Buttons */}
-          <div className="flex flex-wrap items-center gap-2 bg-muted p-1.5 rounded-xl border border-border">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-muted p-1.5 rounded-xl border border-border">
             <button
               onClick={() => handlePresetChange("month")}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -188,31 +231,34 @@ export function ReportsView({
         {periodPreset === "custom" && (
           <form
             onSubmit={handleCustomDateSubmit}
-            className="flex flex-wrap items-center gap-3 pt-3 border-t border-border/60"
+            className="flex flex-col sm:flex-row sm:items-center gap-3 pt-3 border-t border-border/60"
           >
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xs font-medium text-muted-foreground">De:</span>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="bg-background border border-border text-foreground text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-muted-foreground">Até:</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="bg-background border border-border text-foreground text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent"
-              />
+            {/* Date fields row */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">De:</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="flex-1 min-w-0 bg-background border border-border text-foreground text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent"
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Até:</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="flex-1 min-w-0 bg-background border border-border text-foreground text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent"
+                />
+              </div>
             </div>
             <button
               type="submit"
               disabled={isPending}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs px-4 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1.5 shadow-sm"
+              className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 text-xs px-4 py-2 sm:py-1.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-1.5 shadow-sm"
             >
               <Filter className="w-3.5 h-3.5" />
               {isPending ? "Filtrando..." : "Aplicar Filtro"}
@@ -222,10 +268,13 @@ export function ReportsView({
       </div>
 
       {/* ── Navigation Tabs ─────────────────────────────────────────────────── */}
-      <div className="border-b border-border flex items-center gap-4 text-sm font-medium overflow-x-auto pb-1">
+      <div
+        data-testid="reports-tabs-container"
+        className="border-b border-border flex items-center gap-2 sm:gap-4 text-sm font-medium overflow-x-auto whitespace-nowrap pb-1 no-scrollbar"
+      >
         <button
           onClick={() => setActiveTab("financial")}
-          className={`flex items-center gap-2 py-2.5 px-4 rounded-t-xl transition-all border-b-2 ${
+          className={`flex items-center gap-2 py-2.5 px-4 rounded-t-xl transition-all border-b-2 shrink-0 whitespace-nowrap ${
             activeTab === "financial"
               ? "border-accent text-accent font-semibold bg-accent/5"
               : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -236,7 +285,7 @@ export function ReportsView({
         </button>
         <button
           onClick={() => setActiveTab("performance")}
-          className={`flex items-center gap-2 py-2.5 px-4 rounded-t-xl transition-all border-b-2 ${
+          className={`flex items-center gap-2 py-2.5 px-4 rounded-t-xl transition-all border-b-2 shrink-0 whitespace-nowrap ${
             activeTab === "performance"
               ? "border-accent text-accent font-semibold bg-accent/5"
               : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -247,7 +296,7 @@ export function ReportsView({
         </button>
         <button
           onClick={() => setActiveTab("stagnant")}
-          className={`flex items-center gap-2 py-2.5 px-4 rounded-t-xl transition-all border-b-2 relative ${
+          className={`flex items-center gap-2 py-2.5 px-4 rounded-t-xl transition-all border-b-2 shrink-0 whitespace-nowrap relative ${
             activeTab === "stagnant"
               ? "border-accent text-accent font-semibold bg-accent/5"
               : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -455,7 +504,7 @@ export function ReportsView({
             </div>
           </div>
 
-          {/* Ranking Table */}
+          {/* Ranking Table & Mobile Cards */}
           <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col">
             <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -463,7 +512,74 @@ export function ReportsView({
               </span>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* ── Mobile Ranking Cards View (block md:hidden) ── */}
+            <div className="block md:hidden p-3 space-y-3 bg-muted/10">
+              {paginatedRanking.length === 0 ? (
+                <div className="p-8 text-center text-sm text-muted-foreground">
+                  Nenhum produto cadastrado no catálogo.
+                </div>
+              ) : (
+                paginatedRanking.map((item, idx) => {
+                  const absoluteIndex = (rankingPage - 1) * ITEMS_PER_PAGE + idx + 1;
+                  return (
+                    <div
+                      key={item.id}
+                      data-testid="ranking-card-mobile"
+                      className="p-4 bg-card border border-border rounded-xl space-y-3 shadow-xs"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
+                            #{absoluteIndex}
+                          </span>
+                          {getAbcBadge(item.abcClass)}
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          Estoque:{" "}
+                          <strong
+                            className={
+                              item.currentStock === 0 ? "text-danger" : "text-foreground"
+                            }
+                          >
+                            {item.currentStock} un
+                          </strong>
+                        </span>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold text-foreground text-sm leading-snug">
+                          {item.productName}
+                        </h4>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                          <span className="font-mono">{item.sku}</span>
+                          <span>•</span>
+                          <span>{item.color} / {item.size}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-border/50 text-xs">
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">Qtd. Vendida</span>
+                          <span className="font-bold text-foreground text-sm">
+                            {item.quantitySold} pçs
+                          </span>
+                        </div>
+
+                        <div className="text-right">
+                          <span className="text-muted-foreground block text-[11px]">Faturamento Total</span>
+                          <span className="font-bold text-sm text-emerald-600 dark:text-emerald-400 font-mono">
+                            {formatMoney(item.totalRevenue)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* ── Desktop Table View (hidden md:block) ── */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="bg-muted/50 text-muted-foreground text-xs uppercase tracking-wider border-b border-border">
                   <tr>
@@ -487,26 +603,6 @@ export function ReportsView({
                   ) : (
                     paginatedRanking.map((item, idx) => {
                       const absoluteIndex = (rankingPage - 1) * ITEMS_PER_PAGE + idx + 1;
-                      const getAbcBadge = (abc: "A" | "B" | "C") => {
-                        if (abc === "A")
-                          return (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
-                              Classe A
-                            </span>
-                          );
-                        if (abc === "B")
-                          return (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
-                              Classe B
-                            </span>
-                          );
-                        return (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-500/15 text-slate-700 dark:text-slate-400 border border-slate-500/20">
-                            Classe C
-                          </span>
-                        );
-                      };
-
                       return (
                         <tr
                           key={item.id}
@@ -742,7 +838,7 @@ export function ReportsView({
             </div>
           </div>
 
-          {/* Stagnant SKU Table */}
+          {/* Stagnant SKU Table & Mobile Cards */}
           <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm flex flex-col">
             <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -750,7 +846,67 @@ export function ReportsView({
               </span>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* ── Mobile Stagnant Cards View (block md:hidden) ── */}
+            <div className="block md:hidden p-3 space-y-3 bg-muted/10">
+              {paginatedStagnant.length === 0 ? (
+                <div className="p-8 text-center text-sm text-muted-foreground">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
+                  Excelente! Não há SKUs com estoque parado há mais de 30 dias.
+                </div>
+              ) : (
+                paginatedStagnant.map((sku) => (
+                  <div
+                    key={sku.id}
+                    data-testid="stagnant-card-mobile"
+                    className="p-4 bg-card border border-border rounded-xl space-y-3 shadow-xs"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {getStagnantStatusBadge(sku.diasSemVenda)}
+                        <span className="text-xs text-muted-foreground">
+                          {sku.diasSemVenda} dias
+                        </span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        Estoque: <strong className="text-foreground">{sku.currentStock} un</strong>
+                      </span>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold text-foreground text-sm leading-snug">
+                        {sku.productName}
+                      </h4>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                        <span className="font-mono text-accent font-semibold">{sku.sku}</span>
+                        <span>•</span>
+                        <span>{sku.color} / {sku.size}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-border/50 text-xs">
+                      <div>
+                        <span className="text-muted-foreground block text-[11px]">Capital Travado</span>
+                        <span className="font-bold text-sm text-amber-600 dark:text-amber-400 font-mono">
+                          {formatMoney(sku.capitalTravadoCusto)}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedLiquidationSku(sku)}
+                        className="inline-flex items-center gap-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 text-xs px-3.5 py-1.5 rounded-lg font-semibold transition-colors border border-amber-500/30"
+                      >
+                        <Tag className="w-3.5 h-3.5" />
+                        <span>Liquidar</span>
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* ── Desktop Table View (hidden md:block) ── */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="bg-muted/50 text-muted-foreground text-xs uppercase tracking-wider border-b border-border">
                   <tr>
@@ -775,29 +931,6 @@ export function ReportsView({
                     </tr>
                   ) : (
                     paginatedStagnant.map((sku) => {
-                      const getStatusBadge = (days: number) => {
-                        if (days >= 90)
-                          return (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30">
-                              <AlertTriangle className="w-3 h-3" />
-                              &gt; 90 dias (Crítico)
-                            </span>
-                          );
-                        if (days >= 60)
-                          return (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-500/15 text-orange-700 dark:text-orange-400 border border-orange-500/30">
-                              <Clock className="w-3 h-3" />
-                              &gt; 60 dias (Alerta)
-                            </span>
-                          );
-                        return (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
-                            <Clock className="w-3 h-3" />
-                            &gt; 30 dias (Atenção)
-                          </span>
-                        );
-                      };
-
                       return (
                         <tr
                           key={sku.id}
@@ -830,7 +963,7 @@ export function ReportsView({
                             {sku.diasSemVenda} dias
                           </td>
                           <td className="py-3 px-4 text-center">
-                            {getStatusBadge(sku.diasSemVenda)}
+                            {getStagnantStatusBadge(sku.diasSemVenda)}
                           </td>
                           <td className="py-3 px-4 text-center">
                             <button
