@@ -257,99 +257,189 @@ export function SalesHistoryTable({
       </div>
 
       {/* ── Data Table ──────────────────────────────────────────────── */}
+      {/* ── Data Table / Mobile Cards ──────────────────────────────── */}
       <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col">
-        {/* Table Header */}
-        <div className="hidden md:grid grid-cols-[1fr_1.2fr_1fr_1fr_1fr_1fr_4rem] px-5 py-3 border-b border-border bg-muted/40 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          <div>ID Venda</div>
-          <div>Data / Hora</div>
-          <div>Cliente</div>
-          <div>Pagamento</div>
-          <div className="text-right">Valor Total</div>
-          <div className="text-center">Status</div>
-          <div className="text-center">Ações</div>
-        </div>
-
-        {paginatedSales.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
-            <Receipt className="w-12 h-12 opacity-30" />
-            <p className="text-sm font-medium">Nenhuma venda encontrada.</p>
-            {search && (
-              <p className="text-xs opacity-70">
-                Tente ajustar os filtros ou o termo de busca.
-              </p>
-            )}
-          </div>
-        ) : (
-          <div className="divide-y divide-border">
-            {paginatedSales.map((sale) => {
+        {/* ── Mobile Sales Cards View (block md:hidden) ────────────────── */}
+        <div className="block md:hidden p-3 space-y-3 bg-muted/10">
+          {paginatedSales.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-3">
+              <Receipt className="w-10 h-10 opacity-30" />
+              <p className="text-sm font-medium">Nenhuma venda encontrada.</p>
+              {search && (
+                <p className="text-xs opacity-70 text-center">
+                  Tente ajustar os filtros ou o termo de busca.
+                </p>
+              )}
+            </div>
+          ) : (
+            paginatedSales.map((sale) => {
               const isPending = sale.status === "PENDENTE";
               return (
                 <div
                   key={sale.id}
+                  data-testid="sale-card-mobile"
                   onClick={() => handleOpenDetail(sale)}
-                  className="grid grid-cols-[1fr_auto] md:grid-cols-[1fr_1.2fr_1fr_1fr_1fr_1fr_4rem] items-center px-5 py-4 hover:bg-muted/30 transition-colors cursor-pointer group"
+                  className="bg-card border border-border rounded-xl p-4 shadow-xs space-y-3 cursor-pointer hover:border-accent/40 active:scale-[0.99] transition-all"
                 >
-                  {/* ID Venda */}
-                  <div className="font-mono text-xs font-bold text-foreground tracking-wider flex items-center gap-2">
-                    <span>#{sale.id.slice(-8).toUpperCase()}</span>
+                  {/* Top row: ID, Date & Status */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex flex-col">
+                      <span className="font-mono text-xs font-bold text-foreground tracking-wider">
+                        #{sale.id.slice(-8).toUpperCase()}
+                      </span>
+                      <span className="text-xs text-muted-foreground mt-0.5">
+                        {formatDate(sale.createdAt)}
+                      </span>
+                    </div>
+
+                    <div>
+                      {isPending ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                          <Clock className="w-3 h-3" />
+                          Pendente
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Concluída
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Data / Hora */}
-                  <div className="hidden md:block text-xs text-muted-foreground">
-                    {formatDate(sale.createdAt)}
-                  </div>
-
-                  {/* Cliente */}
-                  <div className="hidden md:block text-sm text-foreground truncate">
-                    {sale.customerName}
-                  </div>
-
-                  {/* Forma de Pagamento */}
-                  <div className="hidden md:block">
-                    <span className="px-2 py-0.5 bg-muted rounded-md text-xs font-medium text-muted-foreground">
+                  {/* Customer and Payment method */}
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50 text-xs">
+                    <div className="text-sm font-semibold text-foreground truncate flex-1">
+                      {sale.customerName}
+                    </div>
+                    <span className="px-2 py-0.5 bg-muted rounded-md text-[11px] font-medium text-muted-foreground shrink-0">
                       {sale.paymentMethod}
                     </span>
                   </div>
 
-                  {/* Valor Total */}
-                  <div className="hidden md:block text-sm text-right font-mono font-bold text-foreground">
-                    {formatCurrency(sale.totalAmount)}
-                  </div>
-
-                  {/* Status Badge */}
-                  <div className="hidden md:flex justify-center">
-                    {isPending ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20">
-                        <Clock className="w-3 h-3" />
-                        Pendente
+                  {/* Total Amount & Detail Action */}
+                  <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-xs text-muted-foreground">Total:</span>
+                      <span className="text-base font-bold font-mono text-foreground">
+                        {formatCurrency(sale.totalAmount)}
                       </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Concluída
-                      </span>
-                    )}
-                  </div>
+                    </div>
 
-                  {/* Ações */}
-                  <div className="flex justify-end md:justify-center">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleOpenDetail(sale);
                       }}
-                      className="p-1.5 text-muted-foreground hover:text-accent hover:bg-accent/10 rounded-lg transition-colors"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-accent p-1.5 rounded-lg hover:bg-accent/10 transition-colors"
                       title="Ver Detalhes"
                     >
                       <Eye className="w-4 h-4" />
+                      <span>Detalhes</span>
                     </button>
                   </div>
                 </div>
               );
-            })}
+            })
+          )}
+        </div>
+
+        {/* ── Desktop Table View (hidden md:block) ─────────────────────── */}
+        <div className="hidden md:block">
+          {/* Table Header */}
+          <div className="grid grid-cols-[1fr_1.2fr_1fr_1fr_1fr_1fr_4rem] px-5 py-3 border-b border-border bg-muted/40 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <div>ID Venda</div>
+            <div>Data / Hora</div>
+            <div>Cliente</div>
+            <div>Pagamento</div>
+            <div className="text-right">Valor Total</div>
+            <div className="text-center">Status</div>
+            <div className="text-center">Ações</div>
           </div>
-        )}
+
+          {paginatedSales.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
+              <Receipt className="w-12 h-12 opacity-30" />
+              <p className="text-sm font-medium">Nenhuma venda encontrada.</p>
+              {search && (
+                <p className="text-xs opacity-70">
+                  Tente ajustar os filtros ou o termo de busca.
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {paginatedSales.map((sale) => {
+                const isPending = sale.status === "PENDENTE";
+                return (
+                  <div
+                    key={sale.id}
+                    onClick={() => handleOpenDetail(sale)}
+                    className="grid grid-cols-[1fr_1.2fr_1fr_1fr_1fr_1fr_4rem] items-center px-5 py-4 hover:bg-muted/30 transition-colors cursor-pointer group"
+                  >
+                    {/* ID Venda */}
+                    <div className="font-mono text-xs font-bold text-foreground tracking-wider flex items-center gap-2">
+                      <span>#{sale.id.slice(-8).toUpperCase()}</span>
+                    </div>
+
+                    {/* Data / Hora */}
+                    <div className="text-xs text-muted-foreground">
+                      {formatDate(sale.createdAt)}
+                    </div>
+
+                    {/* Cliente */}
+                    <div className="text-sm text-foreground truncate">
+                      {sale.customerName}
+                    </div>
+
+                    {/* Forma de Pagamento */}
+                    <div>
+                      <span className="px-2 py-0.5 bg-muted rounded-md text-xs font-medium text-muted-foreground">
+                        {sale.paymentMethod}
+                      </span>
+                    </div>
+
+                    {/* Valor Total */}
+                    <div className="text-sm text-right font-mono font-bold text-foreground">
+                      {formatCurrency(sale.totalAmount)}
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className="flex justify-center">
+                      {isPending ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                          <Clock className="w-3 h-3" />
+                          Pendente
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/20">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Concluída
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Ações */}
+                    <div className="flex justify-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDetail(sale);
+                        }}
+                        className="p-1.5 text-muted-foreground hover:text-accent hover:bg-accent/10 rounded-lg transition-colors"
+                        title="Ver Detalhes"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* Rodapé / Paginação */}
         <div className="px-5 py-4 border-t border-border bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
@@ -382,6 +472,18 @@ export function SalesHistoryTable({
           </div>
         </div>
       </div>
+
+      {/* ── Floating Action Button (FAB) Mobile ─────────────────────── */}
+      <button
+        type="button"
+        data-testid="fab-nova-venda"
+        onClick={() => setIsNewSaleOpen(true)}
+        className="fixed bottom-20 right-4 z-40 rounded-full w-14 h-14 bg-orange-500 hover:bg-orange-600 text-white shadow-lg flex items-center justify-center md:hidden transition-all active:scale-95 shadow-orange-500/30"
+        aria-label="Nova Venda (PDV)"
+        title="Nova Venda (PDV)"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
 
       {/* ── Modais ──────────────────────────────────────────────────── */}
       <SaleDetailModal
