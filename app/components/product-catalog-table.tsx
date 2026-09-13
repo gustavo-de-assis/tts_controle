@@ -15,6 +15,8 @@ import {
   Pencil,
   PlusCircle,
   PackagePlus,
+  Filter,
+  X,
 } from "lucide-react";
 import { StatusEstoque } from "../../src/domain/stock";
 import type { ProductCatalogItem } from "../../src/actions/product";
@@ -51,6 +53,10 @@ export function ProductCatalogTable({
   const [editingProduct, setEditingProduct] = useState<ProductCatalogItem | null>(null);
   const [addSkuProduct, setAddSkuProduct] = useState<ProductCatalogItem | null>(null);
   const [stockEntrySku, setStockEntrySku] = useState<SkuTableRow | null>(null);
+
+  // Mobile filter drawer
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [tempCategoryId, setTempCategoryId] = useState("");
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -98,10 +104,29 @@ export function ProductCatalogTable({
   const startIndex = filtered.length > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0;
   const endIndex = Math.min(currentPage * ITEMS_PER_PAGE, filtered.length);
 
+  const activeFilterCount = selectedCategoryId ? 1 : 0;
+
+  const openFilterDrawer = () => {
+    setTempCategoryId(selectedCategoryId);
+    setIsFilterDrawerOpen(true);
+  };
+
+  const applyMobileFilters = () => {
+    setSelectedCategoryId(tempCategoryId);
+    setCurrentPage(1);
+    setIsFilterDrawerOpen(false);
+  };
+
+  const clearMobileFilters = () => {
+    setTempCategoryId("");
+  };
+
   return (
     <>
-      {/* ── Barra de Ferramentas ─────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6">
+      {/* ── Barra de Ferramentas ──────────────────────────────────────── */}
+
+      {/* Desktop Toolbar (md+) */}
+      <div className="hidden md:flex items-center gap-3 mb-6">
         {/* Busca */}
         <div className="relative flex-1 max-w-sm">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -135,16 +160,131 @@ export function ProductCatalogTable({
           <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
         </div>
 
-        {/* Botão Novo Produto */}
+        {/* Botão Novo Produto — desktop only */}
         <button
           id="btn-novo-produto"
           onClick={() => setIsProductModalOpen(true)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-accent text-white text-sm font-semibold rounded-xl hover:bg-accent/90 transition-all shadow-lg shadow-accent/25 whitespace-nowrap"
+          className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 bg-accent text-white text-sm font-semibold rounded-xl hover:bg-accent/90 transition-all shadow-lg shadow-accent/25 whitespace-nowrap"
         >
           <Plus className="w-4 h-4" />
           Novo Produto
         </button>
       </div>
+
+      {/* Mobile Toolbar */}
+      <div className="flex md:hidden items-center gap-2 mb-4">
+        {/* Busca full-width */}
+        <div className="relative flex-1">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <input
+            id="product-search-mobile"
+            type="text"
+            value={search}
+            onChange={handleSearchChange}
+            placeholder="Buscar produto..."
+            className="block w-full pl-10 pr-3 py-2.5 border border-border rounded-xl bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-sm transition-colors"
+          />
+        </div>
+
+        {/* Botão Filtros Mobile */}
+        <button
+          type="button"
+          data-testid="btn-filtros-mobile"
+          onClick={openFilterDrawer}
+          className="relative flex items-center gap-1.5 px-3.5 py-2.5 border border-border rounded-xl bg-card text-foreground text-sm font-medium hover:bg-muted transition-colors shrink-0"
+        >
+          <Filter className="w-4 h-4" />
+          <span>Filtros</span>
+          {activeFilterCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-accent text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Mobile Filter Drawer (Bottom Sheet) */}
+      {isFilterDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end pb-10 md:hidden">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setIsFilterDrawerOpen(false)}
+          />
+          {/* Panel */}
+          <div className="relative bg-[#131b2e] border-t border-slate-800 rounded-t-2xl p-5 pb-8 space-y-5 animate-in slide-in-from-bottom duration-300">
+            {/* Handle */}
+            <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-10 h-1 bg-slate-700 rounded-full" />
+
+            {/* Header */}
+            <div className="flex items-center justify-between pt-2">
+              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <Filter className="w-4 h-4 text-accent" />
+                Filtrar Produtos
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsFilterDrawerOpen(false)}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Categoria */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Categoria</label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTempCategoryId("")}
+                  className={`py-2 px-4 rounded-xl text-xs font-semibold border transition-all ${
+                    tempCategoryId === ""
+                      ? "bg-accent text-white border-accent shadow-sm"
+                      : "bg-[#1a233a] text-slate-300 border-slate-700 hover:border-slate-600"
+                  }`}
+                >
+                  Todas
+                </button>
+                {categories.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setTempCategoryId(c.id)}
+                    className={`py-2 px-4 rounded-xl text-xs font-semibold border transition-all ${
+                      tempCategoryId === c.id
+                        ? "bg-accent text-white border-accent shadow-sm"
+                        : "bg-[#1a233a] text-slate-300 border-slate-700 hover:border-slate-600"
+                    }`}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={clearMobileFilters}
+                className="flex-1 py-2.5 border border-slate-700 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors"
+              >
+                Limpar
+              </button>
+              <button
+                type="button"
+                onClick={applyMobileFilters}
+                className="flex-1 py-2.5 bg-accent hover:bg-accent/90 text-white rounded-xl text-sm font-semibold transition-all shadow-md active:scale-[0.98]"
+              >
+                Aplicar Filtros
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Tabela / Accordion ──────────────────────────────────────── */}
       <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden flex flex-col">

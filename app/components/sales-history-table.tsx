@@ -12,6 +12,8 @@ import {
   DollarSign,
   UserCheck,
   TrendingUp,
+  Filter,
+  X,
 } from "lucide-react";
 import type { SaleHistoryItem } from "../../src/actions/sale";
 import type { SkuTableRow } from "./sku-table";
@@ -50,6 +52,10 @@ export function SalesHistoryTable({
   const [selectedSale, setSelectedSale] = useState<SaleHistoryItem | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isNewSaleOpen, setIsNewSaleOpen] = useState(false);
+  // Mobile filter drawer
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const [tempStatusFilter, setTempStatusFilter] = useState("");
+  const [tempPaymentFilter, setTempPaymentFilter] = useState("");
 
   // Filtered sales
   const filteredSales = useMemo(() => {
@@ -114,7 +120,7 @@ export function SalesHistoryTable({
     const averageTicket =
       concludedSales.length > 0
         ? concludedSales.reduce((acc, s) => acc + s.totalAmount, 0) /
-          concludedSales.length
+        concludedSales.length
         : 0;
 
     return {
@@ -128,6 +134,26 @@ export function SalesHistoryTable({
   const handleOpenDetail = (sale: SaleHistoryItem) => {
     setSelectedSale(sale);
     setIsDetailOpen(true);
+  };
+
+  const activeFilterCount = [statusFilter, paymentFilter].filter(Boolean).length;
+
+  const openFilterDrawer = () => {
+    setTempStatusFilter(statusFilter);
+    setTempPaymentFilter(paymentFilter);
+    setIsFilterDrawerOpen(true);
+  };
+
+  const applyMobileFilters = () => {
+    setStatusFilter(tempStatusFilter);
+    setPaymentFilter(tempPaymentFilter);
+    setCurrentPage(1);
+    setIsFilterDrawerOpen(false);
+  };
+
+  const clearMobileFilters = () => {
+    setTempStatusFilter("");
+    setTempPaymentFilter("");
   };
 
   return (
@@ -195,8 +221,10 @@ export function SalesHistoryTable({
         </div>
       </div>
 
-      {/* ── Toolbar / Filtros ────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6">
+      {/* ── Toolbar ─────────────────────────────────────────────────── */}
+
+      {/* Desktop Toolbar (md+) */}
+      <div className="hidden md:flex items-center gap-3 mb-6">
         {/* Busca */}
         <div className="relative flex-1 max-w-sm">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -245,16 +273,152 @@ export function SalesHistoryTable({
           <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
         </div>
 
-        {/* Botão Nova Venda */}
+        {/* Botão Nova Venda — desktop only */}
         <button
           id="btn-nova-venda"
           onClick={() => setIsNewSaleOpen(true)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-accent text-white text-sm font-semibold rounded-xl hover:bg-accent/90 transition-all shadow-lg shadow-accent/25 whitespace-nowrap ml-auto"
+          className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 bg-accent text-white text-sm font-semibold rounded-xl hover:bg-accent/90 transition-all shadow-lg shadow-accent/25 whitespace-nowrap ml-auto"
         >
           <Plus className="w-4 h-4" />
           Nova Venda
         </button>
       </div>
+
+      {/* Mobile Toolbar */}
+      <div className="flex md:hidden items-center gap-2 mb-4">
+        {/* Busca full-width */}
+        <div className="relative flex-1">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <input
+            id="sale-search-mobile"
+            type="text"
+            value={search}
+            onChange={handleSearchChange}
+            placeholder="Buscar cliente ou ID..."
+            className="block w-full pl-10 pr-3 py-2.5 border border-border rounded-xl bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-sm transition-colors"
+          />
+        </div>
+
+        {/* Botão Filtros Mobile */}
+        <button
+          type="button"
+          data-testid="btn-filtros-mobile"
+          onClick={openFilterDrawer}
+          className="relative flex items-center gap-1.5 px-3.5 py-2.5 border border-border rounded-xl bg-card text-foreground text-sm font-medium hover:bg-muted transition-colors shrink-0"
+        >
+          <Filter className="w-4 h-4" />
+          <span>Filtros</span>
+          {activeFilterCount > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-accent text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Mobile Filter Drawer (Bottom Sheet) */}
+      {isFilterDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end pb-10 md:hidden">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setIsFilterDrawerOpen(false)}
+          />
+          {/* Panel */}
+          <div className="relative bg-[#131b2e] border-t border-slate-800 rounded-t-2xl p-5 pb-8 space-y-5 animate-in slide-in-from-bottom duration-300">
+            {/* Handle */}
+            <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-10 h-1 bg-slate-700 rounded-full" />
+
+            {/* Header */}
+            <div className="flex items-center justify-between pt-2">
+              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <Filter className="w-4 h-4 text-accent" />
+                Filtrar Vendas
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsFilterDrawerOpen(false)}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Status */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: "", label: "Todos" },
+                  { value: "CONCLUIDA", label: "Concluídas" },
+                  { value: "PENDENTE", label: "Pendentes" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setTempStatusFilter(opt.value)}
+                    className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                      tempStatusFilter === opt.value
+                        ? "bg-accent text-white border-accent shadow-sm"
+                        : "bg-[#1a233a] text-slate-300 border-slate-700 hover:border-slate-600"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Forma de Pagamento */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Forma de Pagamento</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: "", label: "Todas" },
+                  { value: "PIX", label: "PIX" },
+                  { value: "CARTAO_CREDITO", label: "Cartão Crédito" },
+                  { value: "CARTAO_DEBITO", label: "Cartão Débito" },
+                  { value: "DINHEIRO", label: "Dinheiro" },
+                  { value: "FIADO", label: "Fiado" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setTempPaymentFilter(opt.value)}
+                    className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                      tempPaymentFilter === opt.value
+                        ? "bg-accent text-white border-accent shadow-sm"
+                        : "bg-[#1a233a] text-slate-300 border-slate-700 hover:border-slate-600"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={clearMobileFilters}
+                className="flex-1 py-2.5 border border-slate-700 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors"
+              >
+                Limpar
+              </button>
+              <button
+                type="button"
+                onClick={applyMobileFilters}
+                className="flex-1 py-2.5 bg-accent hover:bg-accent/90 text-white rounded-xl text-sm font-semibold transition-all shadow-md active:scale-[0.98]"
+              >
+                Aplicar Filtros
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Data Table ──────────────────────────────────────────────── */}
       {/* ── Data Table / Mobile Cards ──────────────────────────────── */}

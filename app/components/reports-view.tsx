@@ -181,7 +181,7 @@ export function ReportsView({
     <div className="space-y-6">
       {/* ── Top Header Bar & Period Filter ──────────────────────────────────── */}
       <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2.5">
               <Sparkles className="w-6 h-6 text-accent" />
@@ -193,7 +193,7 @@ export function ReportsView({
           </div>
 
           {/* Preset Buttons */}
-          <div className="flex flex-wrap items-center gap-2 bg-muted p-1.5 rounded-xl border border-border">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-muted p-1.5 rounded-xl border border-border">
             <button
               onClick={() => handlePresetChange("month")}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -231,31 +231,34 @@ export function ReportsView({
         {periodPreset === "custom" && (
           <form
             onSubmit={handleCustomDateSubmit}
-            className="flex flex-wrap items-center gap-3 pt-3 border-t border-border/60"
+            className="flex flex-col sm:flex-row sm:items-center gap-3 pt-3 border-t border-border/60"
           >
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xs font-medium text-muted-foreground">De:</span>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="bg-background border border-border text-foreground text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-muted-foreground">Até:</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="bg-background border border-border text-foreground text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent"
-              />
+            {/* Date fields row */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">De:</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="flex-1 min-w-0 bg-background border border-border text-foreground text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent"
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Até:</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="flex-1 min-w-0 bg-background border border-border text-foreground text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent"
+                />
+              </div>
             </div>
             <button
               type="submit"
               disabled={isPending}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs px-4 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1.5 shadow-sm"
+              className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 text-xs px-4 py-2 sm:py-1.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-1.5 shadow-sm"
             >
               <Filter className="w-3.5 h-3.5" />
               {isPending ? "Filtrando..." : "Aplicar Filtro"}

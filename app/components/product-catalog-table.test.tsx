@@ -66,6 +66,23 @@ const mockProducts: ProductCatalogItem[] = [
 ];
 
 describe('UI Mobile: ProductCatalogTable Component', () => {
+  it('deve manter a ação inline de Novo Produto exclusiva para desktop', () => {
+    render(<ProductCatalogTable products={mockProducts} categories={mockCategories} />);
+
+    const newProductButton = document.getElementById('btn-novo-produto');
+    expect(newProductButton).not.toBeNull();
+    if (!newProductButton) throw new Error('Botão Novo Produto não encontrado');
+    expect(newProductButton.id).toBe('btn-novo-produto');
+    expect(newProductButton.className).toContain('hidden');
+    expect(newProductButton.className).toContain('md:inline-flex');
+  });
+
+  it('deve renderizar o botão de filtros mobile', () => {
+    render(<ProductCatalogTable products={mockProducts} categories={mockCategories} />);
+
+    expect(screen.getByTestId('btn-filtros-mobile')).toBeInTheDocument();
+  });
+
   it('deve renderizar os cards mobile de produtos com nome, categoria, preço e total em estoque', () => {
     render(<ProductCatalogTable products={mockProducts} categories={mockCategories} />);
 

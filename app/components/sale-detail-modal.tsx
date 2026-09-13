@@ -65,10 +65,10 @@ export function SaleDetailModal({
   const isPending = sale.status === "PENDENTE";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm transition-all">
-      <div className="bg-card w-full max-w-2xl rounded-2xl shadow-2xl border border-border flex flex-col overflow-hidden max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-20 md:p-6 bg-black/60 backdrop-blur-sm transition-all">
+      <div className="bg-[#131b2e] text-foreground w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-800 flex flex-col overflow-y-auto max-h-[85vh] mb-16 md:mb-0">
         {/* Header */}
-        <div className="p-5 border-b border-border flex items-center justify-between bg-muted/20">
+        <div className="sticky top-0 bg-[#131b2e] z-10 p-5 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-accent/10 text-accent rounded-xl">
               <Receipt className="w-5 h-5" />
@@ -209,7 +209,7 @@ export function SaleDetailModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-5 border-t border-border bg-muted/20 flex items-center justify-between">
+        <div className="sticky bottom-0 bg-[#131b2e] z-10 p-5 border-t border-slate-800 flex items-center justify-between">
           <button
             onClick={onClose}
             className="px-4 py-2 border border-border rounded-xl text-xs font-semibold text-foreground hover:bg-muted transition-colors"

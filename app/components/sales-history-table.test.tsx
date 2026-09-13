@@ -48,6 +48,23 @@ const mockSkus: SkuTableRow[] = [
 ];
 
 describe('UI Mobile: SalesHistoryTable Component', () => {
+  it('deve manter a ação inline de Nova Venda exclusiva para desktop', () => {
+    render(<SalesHistoryTable sales={mockSales} availableSkus={mockSkus} />);
+
+    const newSaleButton = document.getElementById('btn-nova-venda');
+    expect(newSaleButton).not.toBeNull();
+    if (!newSaleButton) throw new Error('Botão Nova Venda não encontrado');
+    expect(newSaleButton.id).toBe('btn-nova-venda');
+    expect(newSaleButton.className).toContain('hidden');
+    expect(newSaleButton.className).toContain('md:inline-flex');
+  });
+
+  it('deve renderizar o botão de filtros mobile', () => {
+    render(<SalesHistoryTable sales={mockSales} availableSkus={mockSkus} />);
+
+    expect(screen.getByTestId('btn-filtros-mobile')).toBeInTheDocument();
+  });
+
   it('deve renderizar os cards mobile com ID, Data, Cliente, Tag de Status e Valor Total', () => {
     render(<SalesHistoryTable sales={mockSales} availableSkus={mockSkus} />);
 

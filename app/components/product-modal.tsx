@@ -66,18 +66,18 @@ export function ProductModal({ isOpen, onClose, categories }: ProductModalProps)
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm transition-all duration-300">
-      <div className="bg-card w-full max-w-4xl rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-20 md:p-6 bg-black/60 backdrop-blur-sm transition-all duration-300">
+      <div className="bg-[#131b2e] text-foreground w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-800 overflow-hidden flex flex-col max-h-[85vh] mb-16 md:mb-0">
         
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
+        {/* Sticky Header */}
+        <div className="sticky top-0 bg-[#131b2e] z-10 flex items-center justify-between px-6 py-4 border-b border-slate-800">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/10 rounded-lg text-primary">
               <Tag className="w-5 h-5" />
             </div>
             <h2 className="text-xl font-semibold text-foreground">Novo Produto</h2>
           </div>
-          <button onClick={onClose} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors">
+          <button onClick={onClose} className="p-2 text-muted-foreground hover:text-foreground hover:bg-slate-800/80 rounded-full transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -192,10 +192,10 @@ export function ProductModal({ isOpen, onClose, categories }: ProductModalProps)
           </form>
         </div>
 
-        {/* Footer */}
-        <div className="p-6 border-t border-border bg-muted/10 flex justify-end gap-3">
+        {/* Sticky Footer */}
+        <div className="sticky bottom-0 bg-[#131b2e] z-10 p-4 sm:p-6 border-t border-slate-800 flex justify-end gap-3">
           <button type="button" onClick={onClose} disabled={loading}
-            className="px-5 py-2.5 text-sm font-medium text-foreground bg-card border border-border hover:bg-muted rounded-xl transition-all disabled:opacity-50">
+            className="px-5 py-2.5 text-sm font-medium text-foreground bg-slate-800/80 border border-slate-700 hover:bg-slate-700 rounded-xl transition-all disabled:opacity-50">
             Cancelar
           </button>
           <button type="submit" form="product-form" disabled={loading}

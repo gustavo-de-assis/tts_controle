@@ -20,7 +20,7 @@ export default async function VendasPage() {
       <TopHeader />
 
       {/* ── Main Content ────────────────────────────────────────── */}
-      <main className="flex-1 p-4 md:p-8 pb-20 md:pb-6 overflow-y-auto bg-background">
+      <main className="flex-1 p-4 md:p-8 pb-24 md:pb-6 overflow-y-auto bg-background">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>

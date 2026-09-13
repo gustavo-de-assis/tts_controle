@@ -17,7 +17,7 @@ export default async function RelatoriosPage() {
   return (
     <>
       <TopHeader />
-      <main className="flex-1 p-4 md:p-8 pb-20 md:pb-6 overflow-y-auto bg-background">
+      <main className="flex-1 p-4 md:p-8 pb-24 md:pb-6 overflow-y-auto bg-background">
         <div className="max-w-7xl mx-auto">
           <ReportsView
             initialFinancialData={financialData}

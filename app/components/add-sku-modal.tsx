@@ -64,12 +64,12 @@ export function AddSkuModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 pb-20 md:p-6 backdrop-blur-sm animate-in fade-in duration-200">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150"
+        className="w-full max-w-lg rounded-2xl border border-slate-800 bg-[#131b2e] p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150 mb-16 md:mb-0 max-h-[85vh] overflow-y-auto"
       >
-        <div className="flex items-center justify-between border-b border-border pb-3">
+        <div className="sticky top-0 bg-[#131b2e] z-10 flex items-center justify-between border-b border-slate-800 pb-3">
           <div>
             <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
               <PlusCircle className="h-5 w-5 text-accent" /> Novo SKU para o Produto
@@ -153,7 +153,7 @@ export function AddSkuModal({
           </p>
         )}
 
-        <div className="flex justify-end gap-3 pt-3 border-t border-border">
+        <div className="sticky bottom-0 bg-[#131b2e] z-10 flex justify-end gap-3 pt-3 border-t border-slate-800">
           <button
             type="button"
             onClick={handleClose}
