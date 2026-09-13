@@ -1,21 +1,27 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Plus, Trash2, Tag, Layers, DollarSign } from "lucide-react";
+import { X, Plus, Trash2, Tag, Layers, DollarSign, ChevronDown, Check } from "lucide-react";
 import { createProductWithSkus, CreateProductInput } from "../../src/actions/product";
+import { createCategory } from "../../src/actions/category";
 
 interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
   categories: { id: string; name: string }[];
+  onCategoriesChange?: (categories: { id: string; name: string }[]) => void;
 }
 
-export function ProductModal({ isOpen, onClose, categories }: ProductModalProps) {
+export function ProductModal({ isOpen, onClose, categories, onCategoriesChange }: ProductModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   
   const [name, setName] = useState("");
   const [categoryId, setCategoryId] = useState(categories[0]?.id || "");
+  const [localCategories, setLocalCategories] = useState(categories);
+  const [categoryQuery, setCategoryQuery] = useState("");
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [categoryToast, setCategoryToast] = useState("");
   const [baseCostPrice, setBaseCostPrice] = useState<number>(0);
   const [baseSalePrice, setBaseSalePrice] = useState<number>(0);
   
@@ -39,6 +45,33 @@ export function ProductModal({ isOpen, onClose, categories }: ProductModalProps)
     setSkus(newSkus);
   };
 
+  const selectedCategory = localCategories.find((category) => category.id === categoryId);
+  const matchingCategories = localCategories.filter((category) =>
+    category.name.toLowerCase().includes(categoryQuery.trim().toLowerCase()),
+  );
+  const canCreateCategory = categoryQuery.trim().length > 0 && !localCategories.some(
+    (category) => category.name.trim().toLowerCase() === categoryQuery.trim().toLowerCase(),
+  );
+
+  const handleCreateCategory = async () => {
+    const nameToCreate = categoryQuery.trim();
+    if (!nameToCreate) return;
+
+    try {
+      const category = await createCategory(nameToCreate);
+      const nextCategories = [...localCategories, category].sort((a, b) => a.name.localeCompare(b.name));
+      setLocalCategories(nextCategories);
+      onCategoriesChange?.(nextCategories);
+      setCategoryId(category.id);
+      setCategoryQuery("");
+      setIsCategoryOpen(false);
+      setCategoryToast(`Categoria "${category.name}" criada.`);
+      window.setTimeout(() => setCategoryToast(""), 3000);
+    } catch (categoryError) {
+      setError(categoryError instanceof Error ? categoryError.message : "Erro ao criar categoria.");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -58,15 +91,15 @@ export function ProductModal({ isOpen, onClose, categories }: ProductModalProps)
       setBaseCostPrice(0);
       setBaseSalePrice(0);
       setSkus([{ sku: "", color: "", size: "", currentStock: 0, minimumStock: 0 }]);
-    } catch (err: any) {
-      setError(err.message || "Erro ao salvar o produto.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao salvar o produto.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-20 md:p-6 bg-black/60 backdrop-blur-sm transition-all duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-5 md:p-6 bg-black/60 backdrop-blur-sm transition-all duration-300">
       <div className="bg-[#131b2e] text-foreground w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-800 overflow-hidden flex flex-col max-h-[85vh] mb-16 md:mb-0">
         
         {/* Sticky Header */}
@@ -89,6 +122,11 @@ export function ProductModal({ isOpen, onClose, categories }: ProductModalProps)
               {error}
             </div>
           )}
+          {categoryToast && (
+            <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-400" role="status">
+              {categoryToast}
+            </div>
+          )}
 
           <form id="product-form" onSubmit={handleSubmit} className="space-y-8">
             
@@ -106,12 +144,52 @@ export function ProductModal({ isOpen, onClose, categories }: ProductModalProps)
                     placeholder="Ex: Camiseta Básica" />
                 </div>
                 
-                <div className="space-y-1.5">
+                <div className="relative space-y-1.5">
                   <label className="text-sm font-medium text-foreground">Categoria</label>
-                  <select required value={categoryId} onChange={(e) => setCategoryId(e.target.value)}
-                    className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setIsCategoryOpen((open) => !open)}
+                    className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-left focus:outline-none focus:ring-2 focus:ring-primary"
+                    aria-expanded={isCategoryOpen}
+                    data-testid="category-combobox"
+                  >
+                    <span className={selectedCategory ? "text-foreground" : "text-muted-foreground"}>
+                      {selectedCategory?.name || "Selecione uma categoria"}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                  <input required tabIndex={-1} value={categoryId} onChange={() => undefined} className="sr-only" aria-label="Categoria obrigatória" />
+                  {isCategoryOpen && (
+                    <div className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-lg border border-border bg-[#131b2e] shadow-xl">
+                      <input
+                        autoFocus
+                        value={categoryQuery}
+                        onChange={(event) => setCategoryQuery(event.target.value)}
+                        placeholder="Buscar categoria..."
+                        className="w-full border-b border-border bg-background px-3 py-2 text-sm text-foreground outline-none"
+                        data-testid="category-combobox-input"
+                      />
+                      <div className="max-h-44 overflow-y-auto p-1">
+                        {canCreateCategory && (
+                          <button type="button" onClick={handleCreateCategory} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-primary hover:bg-primary/10">
+                            <Plus className="h-4 w-4" /> Cadastrar &quot;{categoryQuery.trim()}&quot;
+                          </button>
+                        )}
+                        {matchingCategories.map((category) => (
+                          <button
+                            key={category.id}
+                            type="button"
+                            onClick={() => { setCategoryId(category.id); setCategoryQuery(""); setIsCategoryOpen(false); }}
+                            className="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
+                          >
+                            {category.name}
+                            {category.id === categoryId && <Check className="h-4 w-4 text-primary" />}
+                          </button>
+                        ))}
+                        {!canCreateCategory && matchingCategories.length === 0 && <p className="px-3 py-2 text-sm text-muted-foreground">Nenhuma categoria encontrada.</p>}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">

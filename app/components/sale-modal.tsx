@@ -123,7 +123,7 @@ export function SaleModal({ isOpen, onClose, availableSkus }: SaleModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-20 md:p-6 bg-black/60 backdrop-blur-sm transition-all duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-5 md:p-6 bg-black/60 backdrop-blur-sm transition-all duration-300">
       <div className="bg-[#131b2e] text-foreground w-full max-w-lg md:max-w-4xl max-h-[85vh] md:h-[85vh] mb-16 md:mb-0 rounded-2xl shadow-2xl border border-slate-800 flex flex-col md:grid md:grid-cols-12 overflow-y-auto md:overflow-hidden relative">
         {/* Sticky Header unificado */}
         <div className="sticky top-0 bg-[#131b2e] z-10 px-5 py-3.5 border-b border-slate-800 flex items-center justify-between md:col-span-12">

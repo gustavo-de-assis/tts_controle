@@ -20,7 +20,9 @@ import {
 } from "lucide-react";
 import { StatusEstoque } from "../../src/domain/stock";
 import type { ProductCatalogItem } from "../../src/actions/product";
+import type { CategoryItem } from "../../src/actions/category";
 import { ProductModal } from "./product-modal";
+import { CategoryManagerModal } from "./category-manager-modal";
 import { ProductParentEditModal } from "./product-parent-edit-modal";
 import { AddSkuModal } from "./add-sku-modal";
 import { StockEntryModal } from "./stock-entry-modal";
@@ -53,6 +55,8 @@ export function ProductCatalogTable({
   const [editingProduct, setEditingProduct] = useState<ProductCatalogItem | null>(null);
   const [addSkuProduct, setAddSkuProduct] = useState<ProductCatalogItem | null>(null);
   const [stockEntrySku, setStockEntrySku] = useState<SkuTableRow | null>(null);
+  const [localCategories, setLocalCategories] = useState<CategoryItem[]>(categories);
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
 
   // Mobile filter drawer
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
@@ -66,11 +70,11 @@ export function ProductCatalogTable({
         p.categoryName.toLowerCase().includes(search.toLowerCase());
       const matchesCategory =
         !selectedCategoryId ||
-        categories.find((c) => c.id === selectedCategoryId)?.name ===
+        localCategories.find((c) => c.id === selectedCategoryId)?.name ===
           p.categoryName;
       return matchesSearch && matchesCategory;
     });
-  }, [products, search, selectedCategoryId, categories]);
+  }, [products, search, selectedCategoryId, localCategories]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
 
@@ -151,7 +155,7 @@ export function ProductCatalogTable({
             className="appearance-none pl-4 pr-10 py-2.5 border border-border rounded-xl bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-colors cursor-pointer"
           >
             <option value="">Todas as Categorias</option>
-            {categories.map((c) => (
+            {localCategories.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>
@@ -159,6 +163,15 @@ export function ProductCatalogTable({
           </select>
           <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
         </div>
+
+        <button
+          type="button"
+          onClick={() => setIsCategoryManagerOpen(true)}
+          className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors whitespace-nowrap"
+        >
+          <Tag className="h-4 w-4" />
+          Gerenciar Categorias
+        </button>
 
         {/* Botão Novo Produto — desktop only */}
         <button
@@ -248,7 +261,7 @@ export function ProductCatalogTable({
                 >
                   Todas
                 </button>
-                {categories.map((c) => (
+                {localCategories.map((c) => (
                   <button
                     key={c.id}
                     type="button"
@@ -771,13 +784,26 @@ export function ProductCatalogTable({
       <ProductModal
         isOpen={isProductModalOpen}
         onClose={() => setIsProductModalOpen(false)}
-        categories={categories}
+        categories={localCategories}
+        onCategoriesChange={setLocalCategories}
+      />
+
+      <CategoryManagerModal
+        isOpen={isCategoryManagerOpen}
+        categories={localCategories}
+        onClose={() => setIsCategoryManagerOpen(false)}
+        onCategoriesChange={(nextCategories) => {
+          setLocalCategories(nextCategories);
+          if (selectedCategoryId && !nextCategories.some((category) => category.id === selectedCategoryId)) {
+            setSelectedCategoryId("");
+          }
+        }}
       />
 
       <ProductParentEditModal
         isOpen={editingProduct !== null}
         product={editingProduct}
-        categories={categories}
+        categories={localCategories}
         onClose={() => setEditingProduct(null)}
       />
 

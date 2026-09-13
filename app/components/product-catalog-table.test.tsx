@@ -8,6 +8,12 @@ vi.mock('../../src/lib/auth-guard', () => ({
   requireUser: vi.fn().mockResolvedValue({ id: 'user-1', role: 'ADMIN' }),
 }));
 
+vi.mock('../../src/actions/category', () => ({
+  createCategory: vi.fn(),
+  updateCategory: vi.fn(),
+  deleteCategory: vi.fn(),
+}));
+
 const mockCategories = [
   { id: 'cat-1', name: 'Vestuário' },
   { id: 'cat-2', name: 'Acessórios' },
